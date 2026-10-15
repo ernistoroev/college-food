@@ -5,18 +5,28 @@
 **College Food** — меню столовой колледжа. Сервис только показывает меню (блюда, цены, фото и т.п.).
 **Заказов, корзины и оплаты нет** — не добавлять такую функциональность без явной просьбы.
 
-- **Backend** (этот репозиторий) — Django + Django REST Framework. Backend пишет владелец репозитория.
-- **Frontend** — отдельное приложение на React, получает данные через REST API (JSON). В этом репозитории фронтенда нет.
+Backend и frontend лежат в одном репозитории, в корне:
+
+- **Backend** — Django + Django REST Framework (`config/`, `menu/`, `manage.py`). Backend пишет владелец репозитория.
+- **Frontend** — React + Vite (`src/`, `public/`, `index.html`, `package.json`), получает данные через REST API (JSON).
 
 ## Стек
 
+Backend:
 - Python 3.13 (виртуальное окружение в `venv/`)
 - Django 6.1
 - Django REST Framework 3.18
+- django-cors-headers (запросы с dev-сервера Vite)
 - Pillow (для `ImageField`, фото блюд)
 - SQLite (`db.sqlite3`, в `.gitignore`)
 
 Зависимости — в `requirements.txt`. После установки нового пакета обновлять: `pip freeze > requirements.txt`.
+
+Frontend:
+- React 19, Vite 8, ESLint
+- lucide-react (иконки), axios и react-router-dom (установлены, пока не используются)
+
+Зависимости — в `package.json` / `package-lock.json`, `node_modules/` в `.gitignore`.
 
 ## Переменные окружения
 
@@ -33,9 +43,13 @@
 ## Структура
 
 ```
-config/      # настройки проекта: settings.py, urls.py, wsgi/asgi
-menu/        # основное приложение: модели, API меню, админка
+config/      # backend: настройки проекта — settings.py, urls.py, wsgi/asgi
+menu/        # backend: основное приложение — модели, API меню, админка
 manage.py
+src/         # frontend: App.jsx (страница меню), App.css, index.css, main.jsx
+public/      # frontend: статические файлы, фото блюд в public/images/
+index.html   # frontend: точка входа Vite
+package.json
 ```
 
 Текущее состояние: в `menu` есть модели `Category` (название, порядок) и `Dish` (категория, название,
@@ -49,7 +63,14 @@ API (только чтение, `menu/urls.py` через `DefaultRouter`, по�
 Поиска по названию в API нет: `icontains` в SQLite не учитывает регистр кириллицы, фронтенд ищет сам.
 Медиафайлы: `MEDIA_URL = '/media/'`, `MEDIA_ROOT = BASE_DIR / 'media'`.
 
+Frontend пока к API не подключён: блюда и категории захардкожены массивами в `src/App.jsx`, фото —
+из `public/images/` или Unsplash, поиск и фильтр по категории — на клиенте. В шапке есть кнопки
+«Корзина» и «Мои заказы» — это только вёрстка, заказов в проекте нет (см. выше).
+`src/App.backup.jsx` — старая копия `App.jsx`, нигде не импортируется.
+
 ## Команды (Windows, PowerShell)
+
+Backend:
 
 ```powershell
 venv\Scripts\Activate.ps1          # активировать окружение
@@ -60,6 +81,15 @@ python manage.py makemigrations    # после изменения моделе�
 python manage.py migrate
 python manage.py createsuperuser   # доступ к /admin/
 python manage.py test menu         # тесты приложения menu
+```
+
+Frontend:
+
+```powershell
+npm install        # установить зависимости
+npm run dev        # dev-сервер Vite на http://localhost:5173
+npm run build      # сборка в dist/
+npm run lint       # ESLint
 ```
 
 ## Соглашения
