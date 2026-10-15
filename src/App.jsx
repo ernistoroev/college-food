@@ -3,12 +3,12 @@ import { Search, ShoppingCart, Utensils, Clock } from 'lucide-react';
 import './App.css';
 
 const dishes = [
-  { id: 1, name: 'Плов по-восточному', category: 'Горячее', price: 180, image: 'photo-1512058564366-18510be2db19' },
+  { id: 1, name: 'Плов по-восточному', category: 'Горячее', price: 180, image: '/images/plov.jpg' },
   { id: 2, name: 'Паста Болоньезе', category: 'Горячее', price: 160, image: 'photo-1473093295043-cdd812d0e601' },
   { id: 3, name: 'Куриный суп', category: 'Супы', price: 100, image: 'photo-1547592166-23ac45744acd' },
   { id: 4, name: 'Цезарь с курицей', category: 'Салаты', price: 140, image: 'photo-1546793665-c74683f339c1' },
   { id: 5, name: 'Самса с мясом', category: 'Выпечка', price: 70, image: 'photo-1601050690597-df0568f70950' },
-  { id: 6, name: 'Лагман', category: 'Горячее', price: 170, image: 'photo-1563245372-f21724e3856d' },
+  { id: 6, name: 'Лагман', category: 'Горячее', price: 170, image: '/images/lagman.jpg' },
   { id: 7, name: 'Чай', category: 'Напитки', price: 25, image: 'photo-1544787219-7f47ccb76574' },
   { id: 8, name: 'Компот', category: 'Напитки', price: 15, image: '/images/kompot.jpg' },
 ];
