@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ShoppingCart, Utensils, Clock, Plus, Minus, Trash2, X } from 'lucide-react';
+import { Search, ShoppingCart, Utensils, Clock } from 'lucide-react';
 import './App.css';
 
 const dishes = [
@@ -18,37 +18,13 @@ const categories = ['Всё меню', 'Горячее', 'Супы', 'Салат
 export default function App() {
   const [category, setCategory] = useState('Всё меню');
   const [search, setSearch] = useState('');
-  const [cart, setCart] = useState([]);
-  const [cartOpen, setCartOpen] = useState(false);
 
   const filtered = dishes.filter(dish =>
     (category === 'Всё меню' || dish.category === category) &&
     dish.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  function changeQuantity(id, delta) {
-    setCart(old => old
-      .map(item => item.id === id
-        ? { ...item, quantity: item.quantity + delta }
-        : item)
-      .filter(item => item.quantity > 0)
-    );
-  }
-
-  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  function addToCart(dish) {
-    setCart(old => {
-      const found = old.find(item => item.id === dish.id);
-      return found
-        ? old.map(item => item.id === dish.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item)
-        : [...old, { ...dish, quantity: 1 }];
-    });
-  }
 
   return (
     <div className="app">
@@ -64,9 +40,9 @@ export default function App() {
           <a href="#contacts">Контакты</a>
         </nav>
 
-        <button className="cart-button" onClick={() => setCartOpen(true)}>
+        <button className="cart-button">
           <ShoppingCart size={18} />
-          Корзина {cartCount > 0 && <b>{cartCount}</b>}
+          Корзина
         </button>
       </header>
 
@@ -128,9 +104,7 @@ export default function App() {
                   <h3>{dish.name}</h3>
                   <div className="dish-bottom">
                     <strong>{dish.price} <small>сом</small></strong>
-                    <button onClick={() => addToCart(dish)}>
-                      <Plus size={15} /> Добавить
-                    </button>
+
                   </div>
                 </div>
               </article>
@@ -145,62 +119,6 @@ export default function App() {
           )}
         </section>
       </main>
-
-      {cartOpen && (
-        <div className="cart-overlay" onClick={() => setCartOpen(false)}>
-          <section className="cart-panel" onClick={e => e.stopPropagation()}>
-            <div className="cart-heading">
-              <div>
-                <span className="eyebrow">ВАШ ЗАКАЗ</span>
-                <h2>Корзина <small>({cartCount})</small></h2>
-              </div>
-              <button className="cart-close" onClick={() => setCartOpen(false)} aria-label="Закрыть корзину">
-                <X />
-              </button>
-            </div>
-
-            {cart.length === 0 ? (
-              <div className="cart-empty">
-                <ShoppingCart size={42} />
-                <h3>Корзина пока пуста</h3>
-                <p>Добавь любимые блюда из меню.</p>
-                <button className="checkout-button" onClick={() => setCartOpen(false)}>Перейти к меню</button>
-              </div>
-            ) : (
-              <>
-                <div className="cart-items">
-                  {cart.map(item => (
-                    <article className="cart-item" key={item.id}>
-                      <img
-                        src={`https://images.unsplash.com/${item.image}?auto=format&fit=crop&w=200&q=80`}
-                        alt={item.name}
-                      />
-                      <div className="cart-item-info">
-                        <h3>{item.name}</h3>
-                        <strong>{item.price * item.quantity} сом</strong>
-                        <div className="quantity-control">
-                          <button onClick={() => changeQuantity(item.id, -1)} aria-label="Уменьшить количество"><Minus size={14} /></button>
-                          <span>{item.quantity}</span>
-                          <button onClick={() => changeQuantity(item.id, 1)} aria-label="Увеличить количество"><Plus size={14} /></button>
-                          <button className="remove-item" onClick={() => setCart(old => old.filter(x => x.id !== item.id))} aria-label="Удалить блюдо"><Trash2 size={15} /></button>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-                <div className="cart-summary">
-                  <div><span>Количество блюд</span><b>{cartCount}</b></div>
-                  <div className="cart-total"><span>Итого</span><strong>{cartTotal} сом</strong></div>
-                  <button className="checkout-button" onClick={() => alert('Оформление заказа подключим следующим этапом.')}>
-                    Перейти к оформлению
-                  </button>
-                  <p className="cart-note">Оплата и подтверждение заказа будут добавлены следующим этапом.</p>
-                </div>
-              </>
-            )}
-          </section>
-        </div>
-      )}
 
       <footer id="contacts">
         <b>COLLEGE <em>FOOD</em></b>
