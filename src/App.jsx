@@ -10,7 +10,7 @@ const dishes = [
   { id: 5, name: 'Самса с мясом', category: 'Выпечка', price: 70, image: 'photo-1601050690597-df0568f70950' },
   { id: 6, name: 'Лагман', category: 'Горячее', price: 170, image: 'photo-1563245372-f21724e3856d' },
   { id: 7, name: 'Чай', category: 'Напитки', price: 25, image: 'photo-1544787219-7f47ccb76574' },
-  { id: 8, name: 'Компот', category: 'Напитки', price: 35, image: 'photo-1513558161293-cafd765edfd7' },
+  { id: 8, name: 'Компот', category: 'Напитки', price: 15, image: '/images/kompot.jpg' },
 ];
 
 const categories = ['Всё меню', 'Горячее', 'Супы', 'Салаты', 'Выпечка', 'Напитки'];
