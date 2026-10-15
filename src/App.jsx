@@ -96,7 +96,7 @@ export default function App() {
             {filtered.map(dish => (
               <article className="dish" key={dish.id}>
                 <img
-                  src={`https://images.unsplash.com/${dish.image}?auto=format&fit=crop&w=600&q=80`}
+                  src={dish.image.startsWith("/") ? dish.image : `https://images.unsplash.com/${dish.image}?auto=format&fit=crop&w=600&q=80`}
                   alt={dish.name}
                 />
                 <div className="dish-content">
