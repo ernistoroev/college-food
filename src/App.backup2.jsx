@@ -27,17 +27,31 @@ export default function App() {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  function addToCart(dish) {
-    setCart(old => {
-      const found = old.find(item => item.id === dish.id);
-      return found
-        ? old.map(item => item.id === dish.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item)
-        : [...old, { ...dish, quantity: 1 }];
-    });
-  }
+function addToCart(dish) {
+  const currentDish = menuDishes.find(item => item.id === dish.id);
 
+  if (!currentDish || currentDish.stock <= 0) return;
+
+  setMenuDishes(old =>
+    old.map(item =>
+      item.id === dish.id
+        ? { ...item, stock: item.stock - 1 }
+        : item
+    )
+  );
+
+  setCart(old => {
+    const found = old.find(item => item.id === dish.id);
+
+    return found
+      ? old.map(item =>
+          item.id === dish.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      : [...old, { ...dish, quantity: 1 }];
+  });
+}
   return (
     <div className="app">
       <header className="header">
