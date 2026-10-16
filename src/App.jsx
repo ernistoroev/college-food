@@ -1,31 +1,26 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
 import { Search, ShoppingCart, Utensils, Clock } from 'lucide-react';
 import './App.css';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api';
-const ALL = 'Всё меню';
+const dishes = [
+  { id: 1, name: 'Плов по-восточному', category: 'Горячее', price: 180, image: '/images/plov.jpg' },
+  { id: 2, name: 'Паста Болоньезе', category: 'Горячее', price: 160, image: 'photo-1473093295043-cdd812d0e601' },
+  { id: 3, name: 'Куриный суп', category: 'Супы', price: 100, image: 'photo-1547592166-23ac45744acd' },
+  { id: 4, name: 'Цезарь с курицей', category: 'Салаты', price: 140, image: 'photo-1546793665-c74683f339c1' },
+  { id: 5, name: 'Самса с мясом', category: 'Выпечка', price: 70, image: 'photo-1601050690597-df0568f70950' },
+  { id: 6, name: 'Лагман', category: 'Горячее', price: 170, image: '/images/lagman.jpg' },
+  { id: 7, name: 'Чай', category: 'Напитки', price: 25, image: 'photo-1544787219-7f47ccb76574' },
+  { id: 8, name: 'Компот', category: 'Напитки', price: 15, image: '/images/kompot.jpg' },
+];
+
+const categories = ['Всё меню', 'Горячее', 'Супы', 'Салаты', 'Выпечка', 'Напитки'];
 
 export default function App() {
-  const [dishes, setDishes] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [category, setCategory] = useState(ALL);
+  const [category, setCategory] = useState('Всё меню');
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    Promise.all([axios.get(`${API_URL}/dishes/`), axios.get(`${API_URL}/categories/`)])
-      .then(([dishesResponse, categoriesResponse]) => {
-        setDishes(dishesResponse.data);
-        setCategories(categoriesResponse.data.map(item => item.name));
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, []);
-
   const filtered = dishes.filter(dish =>
-    (category === ALL || dish.category_name === category) &&
+    (category === 'Всё меню' || dish.category === category) &&
     dish.name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -86,7 +81,7 @@ export default function App() {
           </div>
 
           <div className="categories">
-            {[ALL, ...categories].map(item => (
+            {categories.map(item => (
               <button
                 key={item}
                 className={category === item ? 'selected' : ''}
@@ -100,13 +95,12 @@ export default function App() {
           <div className="dish-grid">
             {filtered.map(dish => (
               <article className="dish" key={dish.id}>
-                {dish.image ? (
-                  <img src={dish.image} alt={dish.name} />
-                ) : (
-                  <div className="dish-no-photo"><Utensils size={32} /></div>
-                )}
+                <img
+                  src={dish.image.startsWith("/") ? dish.image : `https://images.unsplash.com/${dish.image}?auto=format&fit=crop&w=600&q=80`}
+                  alt={dish.name}
+                />
                 <div className="dish-content">
-                  <span>{dish.category_name}</span>
+                  <span>{dish.category}</span>
                   <h3>{dish.name}</h3>
                   <div className="dish-bottom">
                     <strong>{dish.price} <small>сом</small></strong>
@@ -117,20 +111,7 @@ export default function App() {
             ))}
           </div>
 
-          {loading && (
-            <div className="empty">
-              <h3>Загружаем меню…</h3>
-            </div>
-          )}
-
-          {error && (
-            <div className="empty">
-              <h3>Не удалось загрузить меню</h3>
-              <p>Проверь, что backend запущен, и обнови страницу.</p>
-            </div>
-          )}
-
-          {!loading && !error && filtered.length === 0 && (
+          {filtered.length === 0 && (
             <div className="empty">
               <h3>Ничего не найдено</h3>
               <p>Попробуй другое название блюда.</p>

@@ -24,7 +24,7 @@ Backend:
 
 Frontend:
 - React 19, Vite 8, ESLint
-- lucide-react (иконки), axios (запросы к API), react-router-dom (установлен, пока не используется)
+- lucide-react (иконки), axios и react-router-dom (установлены, пока не используются)
 
 Зависимости — в `package.json` / `package-lock.json`, `node_modules/` в `.gitignore`.
 
@@ -63,9 +63,8 @@ API (только чтение, `menu/urls.py` через `DefaultRouter`, по�
 Поиска по названию в API нет: `icontains` в SQLite не учитывает регистр кириллицы, фронтенд ищет сам.
 Медиафайлы: `MEDIA_URL = '/media/'`, `MEDIA_ROOT = BASE_DIR / 'media'`.
 
-Frontend берёт блюда и категории из API через axios (`src/App.jsx`), адрес — `VITE_API_URL`,
-по умолчанию `http://127.0.0.1:8000/api`. Поиск и фильтр по категории — на клиенте. Фото — из админки,
-блюда без фото показываются с заглушкой; картинки в `public/images/` больше не используются. В шапке есть кнопки
+Frontend пока к API не подключён: блюда и категории захардкожены массивами в `src/App.jsx`, фото —
+из `public/images/` или Unsplash, поиск и фильтр по категории — на клиенте. В шапке есть кнопки
 «Корзина» и «Мои заказы» — это только вёрстка, заказов в проекте нет (см. выше).
 `src/App.backup.jsx` — старая копия `App.jsx`, нигде не импортируется.
 
@@ -88,7 +87,7 @@ Frontend:
 
 ```powershell
 npm install        # установить зависимости
-npm run dev        # dev-сервер Vite на http://127.0.0.1:5173 (host задан в vite.config.js)
+npm run dev        # dev-сервер Vite на http://localhost:5173
 npm run build      # сборка в dist/
 npm run lint       # ESLint
 ```
