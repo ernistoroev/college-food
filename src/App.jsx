@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, ShoppingCart, Utensils, Clock } from 'lucide-react';
+import { Search, ShoppingCart, Utensils, Clock, Plus } from 'lucide-react';
 import './App.css';
 
 const dishes = [
@@ -104,7 +104,7 @@ export default function App() {
                   <h3>{dish.name}</h3>
                   <div className="dish-bottom">
                     <strong>{dish.price} <small>сом</small></strong>
-
+                    <button onClick={() => addToCart(dish)}><Plus size={15} /> Добавить</button>
                   </div>
                 </div>
               </article>

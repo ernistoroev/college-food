@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
+
 :root {
   font-family: 'DM Sans', sans-serif;
   color: #262626;
@@ -291,19 +292,38 @@ main {
 .dish-bottom button {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: white;
-  border: 1px solid #e5e5e2;
-  border-radius: 7px;
-  padding: 9px 8px;
-  font-size: 10px;
+  justify-content: center;
+  gap: 5px;
+  background: #e6463a;
+  color: #ffffff;
+  border: 1px solid #e6463a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
 }
 
 .dish-bottom button:hover {
-  background: #fff0ed;
-  color: var(--red);
+  background: #cf382e;
+  border-color: #cf382e;
+  color: #ffffff;
+}
+
+.dish-bottom button:active {
+  transform: scale(0.97);
+}
+
+.dish-bottom button:hover {
+  background: #cf382e;
+  border-color: #cf382e;
+  color: #fff;
+}
+
+.dish-bottom button:active {
+  transform: scale(.97);
 }
 
 .empty { text-align: center; padding: 45px 15px; color: #999; }
@@ -482,4 +502,34 @@ footer small {
 }
 @media (max-width: 480px) {
   .cart-panel { padding: 22px 18px; }
+}
+
+
+.dish-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.dish-bottom button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: #e6463a !important;
+  color: #ffffff !important;
+  border: 1px solid #e6463a !important;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dish-bottom button:hover {
+  background: #cf382e !important;
+  color: #ffffff !important;
 }
