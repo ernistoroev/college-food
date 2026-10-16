@@ -257,15 +257,6 @@ main {
   display: block;
 }
 
-.dish-no-photo {
-  height: 165px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f4f4f1;
-  color: #c9c9c4;
-}
-
 .dish-content { padding: 14px; }
 .dish-content > span {
   font-size: 9px;
@@ -359,7 +350,7 @@ footer small {
   .categories { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; }
   .categories button { white-space: nowrap; }
   .dish-grid { gap: 10px; }
-  .dish > img, .dish-no-photo { height: 125px; }
+  .dish > img { height: 125px; }
   .dish-content { padding: 10px; }
   .dish h3 { font-size: 12px; min-height: 32px; }
   .dish-bottom { align-items: flex-start; flex-direction: column; }
