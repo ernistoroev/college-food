@@ -4,14 +4,94 @@ from 'lucide-react';
 import './App.css';
 
 const dishes = [
-  { id: 1, name: 'Плов по-восточному', category: 'Горячее', price: 230, image: '/images/plov.jpg', stock: 12 },
-  { id: 2, name: 'Паста Болоньезе', category: 'Горячее', price: 340, image: '/images/pasta.jpg', stock: 6 },
-  { id: 3, name: 'Куриный суп', category: 'Супы', price: 160, image: '/images/sup.jpg', stock: 8 },
-  { id: 4, name: 'Цезарь с курицей', category: 'Салаты', price: 140, image: '/images/salat.jpg', stock: 3 },
-  { id: 5, name: 'Самса с мясом', category: 'Выпечка', price: 70, image: '/images/samsa.jpg', stock: 20 },
-  { id: 6, name: 'Лагман', category: 'Горячее', price: 250, image: '/images/lagman.jpg', stock: 12 },
-  { id: 7, name: 'Чай', category: 'Напитки', price: 25, image: '/images/tea.jpg', stock: 50 },
-  { id: 8, name: 'Компот', category: 'Напитки', price: 15, image: '/images/kompot.jpg', stock: 17 },
+  {
+    id: 1,
+    name: 'Плов по-восточному',
+    category: 'Горячее',
+    price: 230,
+    image: '/images/plov.jpg',
+    stock: 12,
+    weight: '300 г',
+    rating: '4,8',
+    description: 'Рассыпчатый рис, нежное мясо и морковь.'
+  },
+  {
+    id: 2,
+    name: 'Паста Болоньезе',
+    category: 'Горячее',
+    price: 340,
+    image: '/images/pasta.jpg',
+    stock: 6,
+    weight: '300 г',
+    rating: '4,7',
+    description: 'Паста с мясным соусом и томатами.'
+  },
+  {
+    id: 3,
+    name: 'Куриный суп',
+    category: 'Супы',
+    price: 160,
+    image: '/images/sup.jpg',
+    stock: 8,
+    weight: '350 г',
+    rating: '4,8',
+    description: 'Лёгкий куриный суп с овощами и зеленью.'
+  },
+  {
+    id: 4,
+    name: 'Цезарь с курицей',
+    category: 'Салаты',
+    price: 140,
+    image: '/images/salat.jpg',
+    stock: 3,
+    weight: '200 г',
+    rating: '4,9',
+    description: 'Курица, свежий салат, сухарики и соус.'
+  },
+  {
+    id: 5,
+    name: 'Самса с мясом',
+    category: 'Выпечка',
+    price: 70,
+    image: '/images/samsa.jpg',
+    stock: 20,
+    weight: '120 г',
+    rating: '4,8',
+    description: 'Румяная выпечка с сочной мясной начинкой.'
+  },
+  {
+    id: 6,
+    name: 'Лагман',
+    category: 'Горячее',
+    price: 250,
+    image: '/images/lagman.jpg',
+    stock: 12,
+    weight: '350 г',
+    rating: '4,9',
+    description: 'Лапша с мясом и овощами в насыщенном соусе.'
+  },
+  {
+    id: 7,
+    name: 'Чай',
+    category: 'Напитки',
+    price: 25,
+    image: '/images/tea.jpg',
+    stock: 50,
+    weight: '250 мл',
+    rating: '4,7',
+    description: 'Горячий чай для приятного перерыва.'
+  },
+  {
+    id: 8,
+    name: 'Компот',
+    category: 'Напитки',
+    price: 15,
+    image: '/images/kompot.jpg',
+    stock: 17,
+    weight: '250 мл',
+    rating: '4,8',
+    description: 'Освежающий напиток из фруктов.'
+  },
 ];
 
 const categories = ['Всё меню', 'Горячее', 'Супы', 'Салаты', 'Выпечка', 'Напитки'];
@@ -194,46 +274,49 @@ export default function App() {
             ))}
           </div>
 
-          <div className="dish-grid">
-            {filtered.map(dish => (
-              <article className="dish" key={dish.id}>
-                <img src={dish.image} alt={dish.name} />
+<div className="dish-grid">
+  {filtered.map(dish => (
+    <article className="dish" key={dish.id}>
+      <img src={dish.image} alt={dish.name} />
 
-                <div className="dish-content">
-                  <span>{dish.category}</span>
-                  <h3>{dish.name}</h3>
+      <div className="dish-content">
+        <div className="dish-stock-badge">
+          {dish.stock} порций за сегодня
+        </div>
 
-                  <p className={`stock ${
-                    dish.stock === 0 ? 'out' : dish.stock <= 3 ? 'low' : ''
-                  }`}>
-                    {dish.stock === 0
-                      ? 'Закончилось'
-                      : dish.stock <= 3
-                        ? `Осталось ${dish.stock} порц.`
-                        : `В наличии: ${dish.stock} порц.`}
-                  </p>
+        <h3>{dish.name}</h3>
 
-                  <div className="dish-bottom">
-                    <strong>{dish.price} <small>сом</small></strong>
+        <div className="dish-meta">
+          <span>{dish.weight}</span>
+          <span className="meta-dot">·</span>
+          <span className="dish-rating">★ {dish.rating}</span>
+        </div>
 
-                    <button
-                      type="button"
-                      onClick={() => addToCart(dish)}
-                      disabled={dish.stock === 0}
-                    >
-                      {dish.stock === 0 ? (
-                        'Закончилось'
-                      ) : (
-                        <>
-                          <Plus size={15} /> Добавить
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+        <p className="dish-description">{dish.description}</p>
+
+        <div className="dish-bottom">
+          <strong>
+            {dish.price} <small>сом</small>
+          </strong>
+
+          <button
+            type="button"
+            onClick={() => addToCart(dish)}
+            disabled={dish.stock === 0}
+          >
+            {dish.stock === 0 ? (
+              'Закончилось'
+            ) : (
+              <>
+                <Plus size={15} /> Добавить
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </article>
+  ))}
+</div>
 
           {filtered.length === 0 && (
             <div className="empty">
