@@ -790,3 +790,114 @@ footer small {
     font-size: 11px;
   }
 }
+
+.cart-heading h2 {
+  color: #262626 !important;
+}
+
+.cart-heading h2 small {
+  color: #737373 !important;
+}
+
+.cart-heading .eyebrow {
+  color: #737373 !important;
+}
+
+.cart-close {
+  background: #f1f1f1 !important;
+  color: #333333 !important;
+  border: 1px solid #dedede !important;
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.cart-close svg {
+  color: #333333 !important;
+  stroke: #333333 !important;
+}
+
+.cart-close:hover {
+  background: #e2e2e2 !important;
+}
+
+.quantity-control button {
+  background: #f0f0f0 !important;
+  color: #292929 !important;
+  border: 1px solid #d8d8d8 !important;
+}
+
+.quantity-control button svg {
+  color: #292929 !important;
+  stroke: #292929 !important;
+}
+
+.quantity-control button:hover:not(:disabled) {
+  background: #e2e2e2 !important;
+  border-color: #bdbdbd !important;
+}
+
+.quantity-control button:disabled {
+  background: #f5f5f5 !important;
+  color: #999999 !important;
+  opacity: 0.65;
+}
+
+.quantity-control span {
+  color: #262626 !important;
+  font-weight: 600;
+  min-width: 16px;
+  text-align: center;
+}
+
+.cart-item-info h3 {
+  color: #262626 !important;
+}
+
+.cart-item-info > strong {
+  color: #262626 !important;
+}
+
+.cart-item-info p {
+  color: #737373 !important;
+}
+
+.cart-summary,
+.cart-summary > div {
+  color: #555555;
+}
+
+.cart-summary .cart-total {
+  color: #262626 !important;
+}
+
+.cart-total strong {
+  color: #262626 !important;
+}
+
+.quantity-control button.remove-item {
+  background: #fff0ef !important;
+  color: #d92d27 !important;
+  border-color: #ffd2ce !important;
+}
+
+.quantity-control button.remove-item svg {
+  color: #d92d27 !important;
+  stroke: #d92d27 !important;
+}
+
+.quantity-control button.remove-item:hover {
+  background: #ffdedb !important;
+}
+
+.cart-empty h3 {
+  color: #262626 !important;
+}
+
+.cart-empty p,
+.cart-note {
+  color: #737373 !important;
+}
+
+.cart-empty > svg {
+  color: #e6463a !important;
+}
