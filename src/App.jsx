@@ -1,10 +1,25 @@
 
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Utensils, X, Minus, Plus, Trash2
+import {
+  ShoppingCart,
+  Utensils,
+  X,
+  Minus,
+  Plus,
+  Trash2
 } from 'lucide-react';
+
 import './App.css';
 import { dishes, categories } from './entities/dish/model/dishes.js';
 import MenuPage from './pages/menu/ui/MenuPage.jsx';
+
+import {
+  addItemToCart,
+  removeItemFromCart,
+  deleteItemFromCart,
+  getCartCount,
+  getCartTotal
+} from './entities/cart/model/cart.js';
 
 export default function App() {
   const [category, setCategory] = useState('Всё меню');
@@ -13,12 +28,8 @@ export default function App() {
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
 
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const cartTotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const cartCount = getCartCount(cart);
+  const cartTotal = getCartTotal(cart);
 
   const filtered = menuDishes.filter(
     dish =>
@@ -55,19 +66,7 @@ export default function App() {
       )
     );
 
-    setCart(old => {
-      const found = old.find(item => item.id === dish.id);
-
-      if (found) {
-        return old.map(item =>
-          item.id === dish.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-
-      return [...old, { ...dish, quantity: 1 }];
-    });
+    setCart(old => addItemToCart(old, currentDish));
   }
 
   function removeFromCart(dish) {
@@ -75,15 +74,7 @@ export default function App() {
 
     if (!cartItem) return;
 
-    setCart(old =>
-      old
-        .map(item =>
-          item.id === dish.id
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
-        .filter(item => item.quantity > 0)
-    );
+    setCart(old => removeItemFromCart(old, dish.id));
 
     setMenuDishes(old =>
       old.map(item =>
@@ -107,7 +98,7 @@ export default function App() {
       )
     );
 
-    setCart(old => old.filter(item => item.id !== dish.id));
+    setCart(old => deleteItemFromCart(old, dish.id));
   }
 
   return (
