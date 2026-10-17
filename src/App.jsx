@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
-import {Search,ShoppingCart,Utensils,Clock,Plus,X,Minus,Trash2} 
-from 'lucide-react';
+import { ShoppingCart, Utensils, X, Minus, Plus, Trash2
+} from 'lucide-react';
 import './App.css';
 import { dishes, categories } from './entities/dish/model/dishes.js';
-
+import MenuPage from './pages/menu/ui/MenuPage.jsx';
 
 export default function App() {
   const [category, setCategory] = useState('Всё меню');
@@ -13,14 +14,16 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
   const cartTotal = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  const filtered = menuDishes.filter(dish =>
-    (category === 'Всё меню' || dish.category === category) &&
-    dish.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = menuDishes.filter(
+    dish =>
+      (category === 'Всё меню' || dish.category === category) &&
+      dish.name.toLowerCase().includes(search.toLowerCase())
   );
 
   useEffect(() => {
@@ -41,11 +44,14 @@ export default function App() {
 
   function addToCart(dish) {
     const currentDish = menuDishes.find(item => item.id === dish.id);
+
     if (!currentDish || currentDish.stock <= 0) return;
 
     setMenuDishes(old =>
       old.map(item =>
-        item.id === dish.id ? { ...item, stock: item.stock - 1 } : item
+        item.id === dish.id
+          ? { ...item, stock: item.stock - 1 }
+          : item
       )
     );
 
@@ -66,6 +72,7 @@ export default function App() {
 
   function removeFromCart(dish) {
     const cartItem = cart.find(item => item.id === dish.id);
+
     if (!cartItem) return;
 
     setCart(old =>
@@ -80,13 +87,16 @@ export default function App() {
 
     setMenuDishes(old =>
       old.map(item =>
-        item.id === dish.id ? { ...item, stock: item.stock + 1 } : item
+        item.id === dish.id
+          ? { ...item, stock: item.stock + 1 }
+          : item
       )
     );
   }
 
   function deleteFromCart(dish) {
     const cartItem = cart.find(item => item.id === dish.id);
+
     if (!cartItem) return;
 
     setMenuDishes(old =>
@@ -104,7 +114,10 @@ export default function App() {
     <div className="app">
       <header className="header">
         <a href="#" className="logo">
-          <span className="logo-icon"><Utensils /></span>
+          <span className="logo-icon">
+            <Utensils />
+          </span>
+
           <span>
             COLLEGE <b>FOOD</b>
             <small>СТУДЕНЧЕСКАЯ СТОЛОВАЯ</small>
@@ -129,111 +142,15 @@ export default function App() {
       </header>
 
       <main>
-        <section className="hero">
-          <div>
-            <span className="open">
-              <i /> СТОЛОВАЯ ОТКРЫТА ДО 16:00
-            </span>
-
-            <h1>
-              Вкусный обед.<br />
-              <em>Без лишнего ожидания.</em>
-            </h1>
-
-            <p>Выбирай любимые блюда и забирай в удобное время.</p>
-
-            <div className="pickup">
-              <Clock size={17} /> Ближайшая выдача <b>12:20</b>
-            </div>
-          </div>
-
-          <img
-            src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80"
-            alt="Блюдо дня"
-          />
-        </section>
-
-        <section id="menu">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">МЕНЮ СТОЛОВОЙ</span>
-              <h2>Меню дня</h2>
-              <p>Вкусное рядом — выбирай, что по душе.</p>
-            </div>
-
-            <label className="search">
-              <Search size={19} />
-              <input
-                placeholder="Найти блюдо..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="categories">
-            {categories.map(item => (
-              <button
-                key={item}
-                className={category === item ? 'selected' : ''}
-                onClick={() => setCategory(item)}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-
-<div className="dish-grid">
-  {filtered.map(dish => (
-    <article className="dish" key={dish.id}>
-      <img src={dish.image} alt={dish.name} />
-
-      <div className="dish-content">
-        <div className="dish-stock-badge">
-          {dish.stock} порций за сегодня
-        </div>
-
-        <h3>{dish.name}</h3>
-
-        <div className="dish-meta">
-          <span>{dish.weight}</span>
-          <span className="meta-dot">·</span>
-          <span className="dish-rating">★ {dish.rating}</span>
-        </div>
-
-        <p className="dish-description">{dish.description}</p>
-
-        <div className="dish-bottom">
-          <strong>
-            {dish.price} <small>сом</small>
-          </strong>
-
-          <button
-            type="button"
-            onClick={() => addToCart(dish)}
-            disabled={dish.stock === 0}
-          >
-            {dish.stock === 0 ? (
-              'Закончилось'
-            ) : (
-              <>
-                <Plus size={15} /> Добавить
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </article>
-  ))}
-</div>
-
-          {filtered.length === 0 && (
-            <div className="empty">
-              <h3>Ничего не найдено</h3>
-              <p>Попробуй другое название блюда.</p>
-            </div>
-          )}
-        </section>
+        <MenuPage
+          category={category}
+          setCategory={setCategory}
+          categories={categories}
+          search={search}
+          setSearch={setSearch}
+          filtered={filtered}
+          addToCart={addToCart}
+        />
       </main>
 
       <footer id="contacts">
@@ -246,7 +163,9 @@ export default function App() {
         <div
           className="cart-overlay"
           onMouseDown={event => {
-            if (event.target === event.currentTarget) setCartOpen(false);
+            if (event.target === event.currentTarget) {
+              setCartOpen(false);
+            }
           }}
         >
           <section
@@ -278,6 +197,7 @@ export default function App() {
                 <ShoppingCart size={42} />
                 <h3>Корзина пока пустая</h3>
                 <p>Добавь любимые блюда из меню.</p>
+
                 <button
                   type="button"
                   className="checkout-button"
@@ -295,7 +215,9 @@ export default function App() {
 
                       <div className="cart-item-info">
                         <h3>{item.name}</h3>
-                        <strong>{item.price * item.quantity} сом</strong>
+                        <strong>
+                          {item.price * item.quantity} сом
+                        </strong>
                         <p>{item.price} сом за порцию</p>
 
                         <div className="quantity-control">
@@ -313,7 +235,9 @@ export default function App() {
                             type="button"
                             onClick={() => addToCart(item)}
                             disabled={
-                              menuDishes.find(dish => dish.id === item.id)?.stock === 0
+                              menuDishes.find(
+                                dish => dish.id === item.id
+                              )?.stock === 0
                             }
                             aria-label="Увеличить количество"
                           >
@@ -348,13 +272,16 @@ export default function App() {
                   <button
                     type="button"
                     className="checkout-button"
-                    onClick={() => alert('Оформление заказа добавим следующим шагом!')}
+                    onClick={() =>
+                      alert('Оформление заказа добавим следующим шагом!')
+                    }
                   >
                     Оформить заказ
                   </button>
 
                   <p className="cart-note">
-                    Заказ пока не отправляется — подключим оформление следующим шагом.
+                    Заказ пока не отправляется — подключим оформление
+                    следующим шагом.
                   </p>
                 </div>
               </>

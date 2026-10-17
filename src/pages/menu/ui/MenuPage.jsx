@@ -1,0 +1,122 @@
+
+import { Search, Plus } from 'lucide-react';
+
+export default function MenuPage({
+  category,
+  setCategory,
+  categories,
+  search,
+  setSearch,
+  filtered,
+  addToCart
+}) {
+  return (
+    <>
+      <section className="hero">
+        <div>
+          <span className="open">
+            <i /> СТОЛОВАЯ ОТКРЫТА ДО 16:00
+          </span>
+
+          <h1>
+            Вкусный обед.<br />
+            <em>Без лишнего ожидания.</em>
+          </h1>
+
+          <p>Выбирай любимые блюда и забирай в удобное время.</p>
+
+          <div className="pickup">
+            <span>◷</span> Ближайшая выдача <b>12:20</b>
+          </div>
+        </div>
+
+        <img
+          src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80"
+          alt="Блюдо дня"
+        />
+      </section>
+
+      <section id="menu">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">МЕНЮ СТОЛОВОЙ</span>
+            <h2>Меню дня</h2>
+            <p>Вкусное рядом — выбирай, что по душе.</p>
+          </div>
+
+          <label className="search">
+            <Search size={19} />
+            <input
+              placeholder="Найти блюдо..."
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+            />
+          </label>
+        </div>
+
+        <div className="categories">
+          {categories.map(item => (
+            <button
+              key={item}
+              className={category === item ? 'selected' : ''}
+              onClick={() => setCategory(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+
+        <div className="dish-grid">
+          {filtered.map(dish => (
+            <article className="dish" key={dish.id}>
+              <img src={dish.image} alt={dish.name} />
+
+              <div className="dish-content">
+                <div className="dish-stock-badge">
+                  {dish.stock} порций за сегодня
+                </div>
+
+                <h3>{dish.name}</h3>
+
+                <div className="dish-meta">
+                  <span>{dish.weight}</span>
+                  <span className="meta-dot">·</span>
+                  <span className="dish-rating">★ {dish.rating}</span>
+                </div>
+
+                <p className="dish-description">{dish.description}</p>
+
+                <div className="dish-bottom">
+                  <strong>
+                    {dish.price} <small>сом</small>
+                  </strong>
+
+                  <button
+                    type="button"
+                    onClick={() => addToCart(dish)}
+                    disabled={dish.stock === 0}
+                  >
+                    {dish.stock === 0 ? (
+                      'Закончилось'
+                    ) : (
+                      <>
+                        <Plus size={15} /> Добавить
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {filtered.length === 0 && (
+          <div className="empty">
+            <h3>Ничего не найдено</h3>
+            <p>Попробуй другое название блюда.</p>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
