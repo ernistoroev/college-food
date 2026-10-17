@@ -1,5 +1,5 @@
-
-import { Search, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Plus, Utensils } from 'lucide-react';
 
 export default function MenuPage({
   category,
@@ -10,6 +10,8 @@ export default function MenuPage({
   filtered,
   addToCart
 }) {
+  const [brokenImages, setBrokenImages] = useState([]);
+
   return (
     <>
       <section className="hero">
@@ -31,8 +33,11 @@ export default function MenuPage({
         </div>
 
         <img
-          src="https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80"
+          src="/images/plov.jpg"
           alt="Блюдо дня"
+          onError={event => {
+            event.currentTarget.style.display = 'none';
+          }}
         />
       </section>
 
@@ -67,47 +72,69 @@ export default function MenuPage({
         </div>
 
         <div className="dish-grid">
-          {filtered.map(dish => (
-            <article className="dish" key={dish.id}>
-              <img src={dish.image} alt={dish.name} />
+          {filtered.map(dish => {
+            const imageBroken = brokenImages.includes(dish.id);
 
-              <div className="dish-content">
-                <div className="dish-stock-badge">
-                  {dish.stock} порций за сегодня
+            return (
+              <article className="dish" key={dish.id}>
+                {imageBroken ? (
+                  <div className="dish-image-placeholder">
+                    <Utensils size={36} />
+                    <span>{dish.name}</span>
+                  </div>
+                ) : (
+                  <img
+                    src={dish.image}
+                    alt={dish.name}
+                    loading="lazy"
+                    onError={() => {
+                      setBrokenImages(old =>
+                        old.includes(dish.id) ? old : [...old, dish.id]
+                      );
+                    }}
+                  />
+                )}
+
+                <div className="dish-content">
+                  <div className="dish-stock-badge">
+                    {dish.stock > 0
+                      ? `${dish.stock} порций за сегодня`
+                      : 'На сегодня закончилось'}
+                  </div>
+
+                  <h3>{dish.name}</h3>
+
+                  <div className="dish-meta">
+                    <span>{dish.weight}</span>
+                    <span className="meta-dot">·</span>
+                    <span className="dish-rating">★ {dish.rating}</span>
+                  </div>
+
+                  <p className="dish-description">{dish.description}</p>
+
+                  <div className="dish-bottom">
+                    <strong>
+                      {dish.price} <small>сом</small>
+                    </strong>
+
+                    <button
+                      type="button"
+                      onClick={() => addToCart(dish)}
+                      disabled={dish.stock === 0}
+                    >
+                      {dish.stock === 0 ? (
+                        'Закончилось'
+                      ) : (
+                        <>
+                          <Plus size={15} /> Добавить
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-
-                <h3>{dish.name}</h3>
-
-                <div className="dish-meta">
-                  <span>{dish.weight}</span>
-                  <span className="meta-dot">·</span>
-                  <span className="dish-rating">★ {dish.rating}</span>
-                </div>
-
-                <p className="dish-description">{dish.description}</p>
-
-                <div className="dish-bottom">
-                  <strong>
-                    {dish.price} <small>сом</small>
-                  </strong>
-
-                  <button
-                    type="button"
-                    onClick={() => addToCart(dish)}
-                    disabled={dish.stock === 0}
-                  >
-                    {dish.stock === 0 ? (
-                      'Закончилось'
-                    ) : (
-                      <>
-                        <Plus size={15} /> Добавить
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
         {filtered.length === 0 && (

@@ -1141,3 +1141,31 @@ footer small {
     transition: none !important;
   }
 }
+
+
+.dish-image-placeholder {
+  width: 100%;
+  height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #f3f0e9;
+  color: #777064;
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.dish-image-placeholder span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dish > img {
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  display: block;
+}
