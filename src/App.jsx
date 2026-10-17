@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import {
   ShoppingCart,
@@ -6,7 +5,11 @@ import {
   X,
   Minus,
   Plus,
-  Trash2
+  Trash2,
+  ClipboardList,
+  Clock,
+  CheckCircle2,
+  Package
 } from 'lucide-react';
 
 import './App.css';
@@ -21,12 +24,22 @@ import {
   getCartTotal
 } from './entities/cart/model/cart.js';
 
+import {
+  getSavedOrders,
+  saveOrder
+} from './entities/order/model/orders.js';
+
+import CheckoutForm from './features/checkout/ui/CheckoutForm.jsx';
+
 export default function App() {
   const [category, setCategory] = useState('Всё меню');
   const [menuDishes, setMenuDishes] = useState(dishes);
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [orders, setOrders] = useState(() => getSavedOrders());
+  const [ordersOpen, setOrdersOpen] = useState(false);
 
   const cartCount = getCartCount(cart);
   const cartTotal = getCartTotal(cart);
@@ -39,10 +52,13 @@ export default function App() {
 
   useEffect(() => {
     function handleEscape(event) {
-      if (event.key === 'Escape') setCartOpen(false);
+      if (event.key === 'Escape') {
+        setCheckoutOpen(false);
+        setCartOpen(false);
+      }
     }
 
-    if (cartOpen) {
+    if (cartOpen || checkoutOpen) {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
     }
@@ -51,10 +67,12 @@ export default function App() {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [cartOpen]);
+  }, [cartOpen, checkoutOpen]);
 
   function addToCart(dish) {
-    const currentDish = menuDishes.find(item => item.id === dish.id);
+    const currentDish = menuDishes.find(
+      item => item.id === dish.id
+    );
 
     if (!currentDish || currentDish.stock <= 0) return;
 
@@ -101,10 +119,55 @@ export default function App() {
     setCart(old => deleteItemFromCart(old, dish.id));
   }
 
+  function handleCheckout(orderData) {
+    if (cart.length === 0) return;
+
+    const order = {
+      id: Date.now(),
+      ...orderData,
+      createdAt: new Date().toLocaleString('ru-RU'),
+      status: 'Принят'
+    };
+
+    try {
+      const updatedOrders = saveOrder(order);
+
+      setOrders(updatedOrders);
+      setCart([]);
+      setCheckoutOpen(false);
+      setCartOpen(false);
+      setOrdersOpen(true);
+
+      window.alert(
+        `Заказ №${order.id} оформлен!\n` +
+        `Имя: ${order.studentName}\n` +
+        `Время получения: ${order.pickupTime}\n` +
+        `Сумма: ${order.total} сом`
+      );
+    } catch {
+      window.alert(
+        'Не удалось сохранить заказ в браузере. ' +
+        'Проверь настройки хранения данных.'
+      );
+    }
+  }
+
+  function showMenu() {
+    setOrdersOpen(false);
+  }
+
+  function showOrders() {
+    setOrdersOpen(true);
+  }
+
   return (
     <div className="app">
       <header className="header">
-        <a href="#" className="logo">
+        <a
+          href="#menu"
+          className="logo"
+          onClick={showMenu}
+        >
           <span className="logo-icon">
             <Utensils />
           </span>
@@ -116,9 +179,25 @@ export default function App() {
         </a>
 
         <nav>
-          <a className="active" href="#menu">Меню</a>
-          <a href="#menu">Мои заказы</a>
-          <a href="#contacts">Контакты</a>
+          <a
+            className={!ordersOpen ? 'active' : ''}
+            href="#menu"
+            onClick={showMenu}
+          >
+            Меню
+          </a>
+
+          <a
+            className={ordersOpen ? 'active' : ''}
+            href="#orders"
+            onClick={showOrders}
+          >
+            Мои заказы
+          </a>
+
+          <a href="#contacts">
+            Контакты
+          </a>
         </nav>
 
         <button
@@ -133,15 +212,269 @@ export default function App() {
       </header>
 
       <main>
-        <MenuPage
-          category={category}
-          setCategory={setCategory}
-          categories={categories}
-          search={search}
-          setSearch={setSearch}
-          filtered={filtered}
-          addToCart={addToCart}
-        />
+        {ordersOpen ? (
+          <section
+            id="orders"
+            style={{
+              maxWidth: 1180,
+              margin: '0 auto',
+              padding: '48px 24px 72px',
+              minHeight: '60vh'
+            }}
+          >
+            <div style={{ marginBottom: 32 }}>
+              <span className="eyebrow">COLLEGE FOOD</span>
+
+              <h1
+                style={{
+                  margin: '10px 0',
+                  fontSize: 'clamp(30px, 4vw, 44px)',
+                  color: 'var(--text-primary, #222)',
+                  letterSpacing: '-1px'
+                }}
+              >
+                Мои заказы
+              </h1>
+
+              <p style={{ color: 'var(--text-secondary, #777)' }}>
+                Здесь хранится история твоих заказов.
+              </p>
+            </div>
+
+            {orders.length === 0 ? (
+              <div
+                style={{
+                  padding: '48px 20px',
+                  textAlign: 'center',
+                  border: '1px solid #e9e9e9',
+                  borderRadius: 20,
+                  background: 'var(--card-bg, #fff)'
+                }}
+              >
+                <ClipboardList
+                  size={44}
+                  color="#e9483b"
+                  style={{ marginBottom: 12 }}
+                />
+
+                <h2 style={{ color: 'var(--text-primary, #222)' }}>
+                  Заказов пока нет
+                </h2>
+
+                <p style={{ color: 'var(--text-secondary, #777)' }}>
+                  Выбери блюда в меню и оформи первый заказ.
+                </p>
+
+                <button
+                  type="button"
+                  className="checkout-button"
+                  style={{ marginTop: 16, maxWidth: 240 }}
+                  onClick={showMenu}
+                >
+                  Перейти в меню
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+                  gap: 20
+                }}
+              >
+                {orders.map(order => (
+                  <article
+                    key={order.id}
+                    style={{
+                      padding: 24,
+                      border: '1px solid #e9e9e9',
+                      borderRadius: 20,
+                      background: 'var(--card-bg, #fff)',
+                      boxShadow: '0 5px 20px rgba(0,0,0,0.035)',
+                      minWidth: 0
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        marginBottom: 18
+                      }}
+                    >
+                      <div>
+                        <span
+                          style={{
+                            color: 'var(--text-secondary, #777)',
+                            fontSize: 12
+                          }}
+                        >
+                          НОМЕР ЗАКАЗА
+                        </span>
+
+                        <h2
+                          style={{
+                            margin: '5px 0 0',
+                            fontSize: 21,
+                            color: 'var(--text-primary, #222)',
+                            overflowWrap: 'anywhere'
+                          }}
+                        >
+                          №{order.id}
+                        </h2>
+                      </div>
+
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '8px 10px',
+                          borderRadius: 30,
+                          background: '#eaf7ed',
+                          color: '#237a3b',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <CheckCircle2 size={14} />
+                        {order.status}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        color: 'var(--text-secondary, #777)',
+                        fontSize: 13,
+                        marginBottom: 8
+                      }}
+                    >
+                      <Clock size={15} />
+                      <span>{order.createdAt}</span>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        color: 'var(--text-secondary, #777)',
+                        fontSize: 13,
+                        marginBottom: 20
+                      }}
+                    >
+                      <Package size={15} />
+                      Получение: {order.pickupTime}
+                    </div>
+
+                    <div
+                      style={{
+                        borderTop: '1px solid #eeeeee',
+                        borderBottom: '1px solid #eeeeee',
+                        padding: '16px 0',
+                        marginBottom: 16
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontSize: 14,
+                          margin: '0 0 12px',
+                          color: 'var(--text-primary, #222)'
+                        }}
+                      >
+                        Состав заказа
+                      </h3>
+
+                      {order.items?.map((item, index) => (
+                        <div
+                          key={`${item.id}-${index}`}
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            gap: 12,
+                            marginTop: 10,
+                            fontSize: 14,
+                            color: 'var(--text-secondary, #666)'
+                          }}
+                        >
+                          <span style={{ overflowWrap: 'anywhere' }}>
+                            {item.name} × {item.quantity}
+                          </span>
+
+                          <strong
+                            style={{
+                              color: 'var(--text-primary, #222)',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {item.price * item.quantity} сом
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 12
+                      }}
+                    >
+                      <span style={{ color: 'var(--text-secondary, #777)' }}>
+                        Итого
+                      </span>
+
+                      <strong
+                        style={{
+                          fontSize: 22,
+                          color: '#e9483b',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        {order.total} сом
+                      </strong>
+                    </div>
+
+                    <p
+                      style={{
+                        margin: '14px 0 0',
+                        fontSize: 13,
+                        color: 'var(--text-secondary, #777)'
+                      }}
+                    >
+                      Получатель: {order.studentName}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="checkout-cancel"
+              style={{ marginTop: 24, width: 'auto' }}
+              onClick={showMenu}
+            >
+              Вернуться в меню
+            </button>
+          </section>
+        ) : (
+          <MenuPage
+            category={category}
+            setCategory={setCategory}
+            categories={categories}
+            search={search}
+            setSearch={setSearch}
+            filtered={filtered}
+            addToCart={addToCart}
+          />
+        )}
       </main>
 
       <footer id="contacts">
@@ -206,9 +539,11 @@ export default function App() {
 
                       <div className="cart-item-info">
                         <h3>{item.name}</h3>
+
                         <strong>
                           {item.price * item.quantity} сом
                         </strong>
+
                         <p>{item.price} сом за порцию</p>
 
                         <div className="quantity-control">
@@ -263,20 +598,54 @@ export default function App() {
                   <button
                     type="button"
                     className="checkout-button"
-                    onClick={() =>
-                      alert('Оформление заказа добавим следующим шагом!')
-                    }
+                    onClick={() => {
+                      setCartOpen(false);
+                      setCheckoutOpen(true);
+                    }}
                   >
                     Оформить заказ
                   </button>
 
                   <p className="cart-note">
-                    Заказ пока не отправляется — подключим оформление
-                    следующим шагом.
+                    Проверь состав заказа перед подтверждением.
                   </p>
                 </div>
               </>
             )}
+          </section>
+        </div>
+      )}
+
+      {checkoutOpen && (
+        <div
+          className="cart-overlay"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) {
+              setCheckoutOpen(false);
+            }
+          }}
+        >
+          <section
+            className="cart-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Оформление заказа"
+          >
+            <button
+              type="button"
+              className="cart-close"
+              onClick={() => setCheckoutOpen(false)}
+              aria-label="Закрыть оформление заказа"
+            >
+              <X size={20} />
+            </button>
+
+            <CheckoutForm
+              cart={cart}
+              cartTotal={cartTotal}
+              onSubmit={handleCheckout}
+              onCancel={() => setCheckoutOpen(false)}
+            />
           </section>
         </div>
       )}
