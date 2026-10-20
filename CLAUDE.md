@@ -2,33 +2,56 @@
 
 ## О проекте
 
-**College Food** — меню столовой колледжа. Сервис только показывает меню (блюда, цены, фото и т.п.).
-**Заказов, корзины и оплаты нет** — не добавлять такую функциональность без явной просьбы.
+**College Food** — меню столовой колледжа: блюда, цены, фото, поиск и фильтр по категориям.
+Во фронтенде есть корзина, оформление заказа и «Мои заказы», но они работают только в браузере (`localStorage`).
+**На бэкенде заказов и оплаты нет** — не добавлять их без явной просьбы.
 
-Backend и frontend лежат в одном репозитории, в корне:
+Репозиторий разделён на две независимые части:
 
-- **Backend** — Django + Django REST Framework (`config/`, `menu/`, `manage.py`). Backend пишет владелец репозитория.
-- **Frontend** — React + Vite (`src/`, `public/`, `index.html`, `package.json`), получает данные через REST API (JSON).
+- **`backend/`** — Django + Django REST Framework, отдаёт меню через REST API (JSON). Backend пишет владелец репозитория.
+- **`frontend/`** — React + Vite, сайт для студентов.
 
-## Стек
+Команды каждой части запускаются из её папки (`cd backend` / `cd frontend`).
 
-Backend:
-- Python 3.13 (виртуальное окружение в `venv/`)
-- Django 6.1
-- Django REST Framework 3.18
-- django-cors-headers (запросы с dev-сервера Vite)
-- Pillow (для `ImageField`, фото блюд)
-- SQLite (`db.sqlite3`, в `.gitignore`)
+## Структура
 
-Зависимости — в `requirements.txt`. После установки нового пакета обновлять: `pip freeze > requirements.txt`.
+```
+backend/
+  config/            # настройки проекта: settings.py, urls.py, wsgi/asgi
+  menu/              # основное приложение: модели, API меню, админка, тесты
+  manage.py
+  requirements.txt
+  .env.example       # пример настроек; локальный .env, venv/, db.sqlite3, media/ — тоже здесь, в .gitignore
+frontend/
+  src/
+    App.jsx          # корень приложения: состояние корзины и заказов, шапка, корзина, «Мои заказы»
+    pages/menu/      # страница меню (MenuPage)
+    entities/        # dish (данные блюд), cart (логика корзины), order (заказы в localStorage)
+    features/        # checkout (форма оформления заказа)
+  public/images/     # фото блюд
+  index.html, vite.config.js, eslint.config.js, package.json
+.gitignore           # общий для обеих частей
+CLAUDE.md
+```
 
-Frontend:
-- React 19, Vite 8, ESLint
-- lucide-react (иконки), axios и react-router-dom (установлены, пока не используются)
+## Backend
 
-Зависимости — в `package.json` / `package-lock.json`, `node_modules/` в `.gitignore`.
+Стек: Python 3.13 (окружение в `backend/venv/`), Django 6.1, Django REST Framework 3.18,
+django-cors-headers, Pillow (для `ImageField`), SQLite (`backend/db.sqlite3`).
+Зависимости — в `backend/requirements.txt`. После установки нового пакета: `pip freeze > requirements.txt`.
 
-## Переменные окружения
+Модели в `menu`: `Category` (название, порядок) и `Dish` (категория, название, описание, цена в сомах,
+фото в `media/dishes/`, флаг `is_available`), обе зарегистрированы в админке.
+Категорию с блюдами удалить нельзя (`on_delete=PROTECT`).
+
+API (только чтение, `menu/urls.py` через `DefaultRouter`, подключён в `config/urls.py` под `/api/`):
+- `GET /api/categories/` — категории в порядке `order`;
+- `GET /api/dishes/` — только блюда с `is_available=True`, фильтр `?category=<id>`; `GET /api/dishes/<id>/`.
+Цена отдаётся числом (`COERCE_DECIMAL_TO_STRING = False`), `image` — полный URL или `null`.
+Поиска по названию в API нет: `icontains` в SQLite не учитывает регистр кириллицы.
+Медиафайлы: `MEDIA_URL = '/media/'`, `MEDIA_ROOT = BASE_DIR / 'media'` (`BASE_DIR` — это `backend/`).
+
+### Переменные окружения
 
 | Переменная | По умолчанию (dev) | Назначение |
 |---|---|---|
@@ -37,53 +60,36 @@ Frontend:
 | `DJANGO_ALLOWED_HOSTS` | пусто | список хостов через запятую, нужен при `DEBUG=False` |
 | `DJANGO_CORS_ALLOWED_ORIGINS` | пусто | адреса фронтенда через запятую, которым можно обращаться к API |
 
-`settings.py` сам читает файл `.env` из корня проекта (без сторонних библиотек); реальные переменные окружения имеют приоритет.
-Для локальной разработки: `Copy-Item .env.example .env`. Файл `.env` в `.gitignore`, `.env.example` — коммитится.
+`settings.py` сам читает `backend/.env` (без сторонних библиотек); реальные переменные окружения имеют приоритет.
+Файл `.env` в `.gitignore`, `.env.example` — коммитится.
 
-## Структура
-
-```
-config/      # backend: настройки проекта — settings.py, urls.py, wsgi/asgi
-menu/        # backend: основное приложение — модели, API меню, админка
-manage.py
-src/         # frontend: App.jsx (страница меню), App.css, index.css, main.jsx
-public/      # frontend: статические файлы, фото блюд в public/images/
-index.html   # frontend: точка входа Vite
-package.json
-```
-
-Текущее состояние: в `menu` есть модели `Category` (название, порядок) и `Dish` (категория, название,
-описание, цена в сомах, фото в `media/dishes/`, флаг `is_available`), обе зарегистрированы в админке.
-Категорию с блюдами удалить нельзя (`on_delete=PROTECT`).
-
-API (только чтение, `menu/urls.py` через `DefaultRouter`, подключён в `config/urls.py` под `/api/`):
-- `GET /api/categories/` — категории в порядке `order`;
-- `GET /api/dishes/` — только блюда с `is_available=True`, фильтр `?category=<id>`; `GET /api/dishes/<id>/`.
-Цена отдаётся числом (`COERCE_DECIMAL_TO_STRING = False`), `image` — полный URL или `null`.
-Поиска по названию в API нет: `icontains` в SQLite не учитывает регистр кириллицы, фронтенд ищет сам.
-Медиафайлы: `MEDIA_URL = '/media/'`, `MEDIA_ROOT = BASE_DIR / 'media'`.
-
-Frontend пока к API не подключён: блюда и категории захардкожены массивами в `src/App.jsx`, фото —
-из `public/images/` или Unsplash, поиск и фильтр по категории — на клиенте. В шапке есть кнопки
-«Корзина» и «Мои заказы» — это только вёрстка, заказов в проекте нет (см. выше).
-`src/App.backup.jsx` — старая копия `App.jsx`, нигде не импортируется.
-
-## Команды (Windows, PowerShell)
-
-Backend:
+### Команды (из `backend/`, Windows PowerShell)
 
 ```powershell
+python -m venv venv                # один раз: создать окружение
 venv\Scripts\Activate.ps1          # активировать окружение
-pip install -r requirements.txt    # установить зависимости
-Copy-Item .env.example .env        # один раз: включает DEBUG для локальной разработки
-python manage.py runserver         # dev-сервер на http://127.0.0.1:8000
-python manage.py makemigrations    # после изменения моделей
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env        # один раз: включает DEBUG и CORS для локальной разработки
 python manage.py migrate
 python manage.py createsuperuser   # доступ к /admin/
+python manage.py runserver         # http://127.0.0.1:8000
+python manage.py makemigrations    # после изменения моделей
 python manage.py test menu         # тесты приложения menu
 ```
 
-Frontend:
+## Frontend
+
+Стек: React 19, Vite 8, ESLint, lucide-react (иконки). axios и react-router-dom установлены, но пока не используются.
+Зависимости — в `frontend/package.json` / `package-lock.json`.
+
+Текущее состояние: к API фронтенд **не подключён** — 28 блюд и категории захардкожены в
+`src/entities/dish/model/dishes.js` (с полями `stock`, `weight`, `rating`, которых нет в модели `Dish`).
+Фото — из `public/images/`, для части блюд файлов нет, тогда показывается заглушка.
+Поиск и фильтр по категории — на клиенте. Остаток порций (`stock`) уменьшается при добавлении в корзину,
+только в памяти браузера.
+`src/App.backup.jsx`, `src/App.backup2.jsx`, `src/App.css.save` — старые копии, нигде не используются.
+
+### Команды (из `frontend/`)
 
 ```powershell
 npm install        # установить зависимости
@@ -95,9 +101,10 @@ npm run lint       # ESLint
 ## Соглашения
 
 - API — только через DRF (сериализаторы + ViewSet/generic views), ответы в JSON для React-фронтенда.
-- Маршруты API держать под префиксом `/api/` (например, `menu/urls.py`, подключённый через `include` в `config/urls.py`).
-- Публичное API меню — в основном только чтение; редактирование меню — через Django admin.
-- CORS — через `django-cors-headers`; разрешённые адреса фронтенда в `DJANGO_CORS_ALLOWED_ORIGINS` (через запятую).
+- Маршруты API держать под префиксом `/api/` (`menu/urls.py`, подключённый через `include` в `config/urls.py`).
+- Публичное API меню — только чтение; редактирование меню — через Django admin.
+- CORS — через `django-cors-headers`; разрешённые адреса фронтенда в `DJANGO_CORS_ALLOWED_ORIGINS`.
 - В dev медиа раздаются через `static()` в `config/urls.py` при `DEBUG = True`.
-- `venv/`, `db.sqlite3`, `media/` в `.gitignore` — не коммитить.
-- Секреты и настройки окружения — только через переменные окружения (см. выше), не хардкодить в `settings.py`.
+- `venv/`, `db.sqlite3`, `media/`, `.env`, `node_modules/`, `dist/` в `.gitignore` — не коммитить.
+- Секреты и настройки окружения — только через переменные окружения, не хардкодить в `settings.py`.
+- Каждая задача — в отдельной ветке и через Pull Request в `main`.
