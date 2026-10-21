@@ -30,8 +30,13 @@ import {
 } from './entities/order/model/orders.js';
 
 import CheckoutForm from './features/checkout/ui/CheckoutForm.jsx';
+import ReviewsPage from './pages/reviews/ui/ReviewsPage.jsx';
+import AuthModal from './features/auth/ui/AuthModal.jsx';
+import { getCurrentUser, clearCurrentUser } from './entities/auth/model/auth.js';
 
 export default function App() {
+
+
   const [category, setCategory] = useState('Всё меню');
   const [menuDishes, setMenuDishes] = useState(dishes);
   const [search, setSearch] = useState('');
@@ -40,6 +45,9 @@ export default function App() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [orders, setOrders] = useState(() => getSavedOrders());
   const [ordersOpen, setOrdersOpen] = useState(false);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
 
   const cartCount = getCartCount(cart);
   const cartTotal = getCartTotal(cart);
@@ -154,14 +162,21 @@ export default function App() {
 
   function showMenu() {
     setOrdersOpen(false);
+    setReviewsOpen(false);
   }
 
   function showOrders() {
     setOrdersOpen(true);
+    setReviewsOpen(false);
+  }
+
+  function showReviews() {
+    setOrdersOpen(false);
+    setReviewsOpen(true);
   }
 
   return (
-    <div className="app">
+    <div className="app" style={{display: 'flex', flexDirection: 'column', minHeight: '100vh'}}>
       <header className="header">
         <a
           href="#menu"
@@ -180,7 +195,7 @@ export default function App() {
 
         <nav>
           <a
-            className={!ordersOpen ? 'active' : ''}
+            className={!ordersOpen && !reviewsOpen ? 'active' : ''}
             href="#menu"
             onClick={showMenu}
           >
@@ -188,11 +203,21 @@ export default function App() {
           </a>
 
           <a
-            className={ordersOpen ? 'active' : ''}
+            className={ordersOpen && !reviewsOpen ? 'active' : ''}
             href="#orders"
             onClick={showOrders}
           >
             Мои заказы
+          </a>
+
+
+
+          <a
+            className={reviewsOpen ? 'active' : ''}
+            href="#reviews"
+            onClick={showReviews}
+          >
+            Отзывы
           </a>
 
           <a href="#contacts">
@@ -200,19 +225,43 @@ export default function App() {
           </a>
         </nav>
 
-        <button
-          type="button"
-          className="cart-button"
-          onClick={() => setCartOpen(true)}
-        >
-          <ShoppingCart size={18} />
-          Корзина
-          {cartCount > 0 && <b>{cartCount}</b>}
-        </button>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="login-button"
+            onClick={() => {
+              if (currentUser) {
+                if (window.confirm('Выйти из аккаунта?')) {
+                  clearCurrentUser();
+                  setCurrentUser(null);
+                }
+              } else {
+                setAuthOpen(true);
+              }
+            }}
+          >
+            {currentUser ? currentUser.name : 'Войти'}
+          </button>
+
+          <button
+            type="button"
+            className="cart-button"
+            onClick={() => setCartOpen(true)}
+          >
+            <ShoppingCart size={18} />
+            Корзина
+            {cartCount > 0 && <b>{cartCount}</b>}
+          </button>
+        </div>
       </header>
 
-      <main>
-        {ordersOpen ? (
+      <main style={{flex: '1'}}>
+        {reviewsOpen ? (
+          <ReviewsPage
+            currentUser={currentUser}
+            onLogin={() => setAuthOpen(true)}
+          />
+        ) : ordersOpen ? (
           <section
             id="orders"
             style={{
@@ -614,6 +663,13 @@ export default function App() {
             )}
           </section>
         </div>
+      )}
+
+      {authOpen && (
+        <AuthModal
+          onClose={() => setAuthOpen(false)}
+          onLogin={user => setCurrentUser(user)}
+        />
       )}
 
       {checkoutOpen && (
