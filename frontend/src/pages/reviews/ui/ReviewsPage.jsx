@@ -82,7 +82,18 @@ export default function ReviewsPage({ currentUser, onLogin }) {
 
       <div className="reviews-layout">
         <form className="review-form" onSubmit={publishReview}>
-          <h2>Оставить отзыв</h2>
+          <h2
+            style={{
+              color: "#171717",
+              fontFamily: "Inter, system-ui, sans-serif",
+              fontSize: "28px",
+              fontWeight: 700,
+              letterSpacing: "-0.8px",
+              marginBottom: "16px"
+            }}
+          >
+            Оставить отзыв
+          </h2>
           <p>Поделись впечатлениями о блюдах и обслуживании.</p>
 
           <label>Твоя оценка</label>

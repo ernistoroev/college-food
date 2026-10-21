@@ -43,10 +43,24 @@ export default function MenuPage({
 
       <section id="menu">
         <div className="section-heading">
-          <div>
+          <div className="menu-heading-centered">
             <span className="eyebrow">МЕНЮ СТОЛОВОЙ</span>
             <h2>Меню дня</h2>
             <p>Вкусное рядом — выбирай, что по душе.</p>
+          </div>
+        </div>
+
+        <div className="menu-filters-row">
+          <div className="categories">
+          {categories.map(item => (
+            <button
+              key={item}
+              className={category === item ? 'selected' : ''}
+              onClick={() => setCategory(item)}
+            >
+              {item}
+            </button>
+          ))}
           </div>
 
           <label className="search">
@@ -57,18 +71,6 @@ export default function MenuPage({
               onChange={event => setSearch(event.target.value)}
             />
           </label>
-        </div>
-
-        <div className="categories">
-          {categories.map(item => (
-            <button
-              key={item}
-              className={category === item ? 'selected' : ''}
-              onClick={() => setCategory(item)}
-            >
-              {item}
-            </button>
-          ))}
         </div>
 
         <div className="dish-grid">
