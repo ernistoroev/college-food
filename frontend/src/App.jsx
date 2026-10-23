@@ -32,7 +32,8 @@ import {
 import CheckoutForm from './features/checkout/ui/CheckoutForm.jsx';
 import ReviewsPage from './pages/reviews/ui/ReviewsPage.jsx';
 import AuthModal from './features/auth/ui/AuthModal.jsx';
-import { getCurrentUser, clearCurrentUser } from './entities/auth/model/auth.js';
+import ProfilePage from './pages/profile/ui/ProfilePage.jsx';
+import { getCurrentUser, saveCurrentUser, clearCurrentUser } from './entities/auth/model/auth.js';
 
 export default function App() {
 
@@ -47,6 +48,7 @@ export default function App() {
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
 
   const cartCount = getCartCount(cart);
@@ -160,6 +162,17 @@ export default function App() {
     }
   }
 
+  function handleProfileSave(user) {
+    try {
+      saveCurrentUser(user);
+      setCurrentUser(user);
+      setProfileOpen(false);
+      window.alert('Профиль сохранён!');
+    } catch {
+      window.alert('Не удалось сохранить профиль. Попробуй выбрать изображение меньшего размера.');
+    }
+  }
+
   function showMenu() {
     setOrdersOpen(false);
     setReviewsOpen(false);
@@ -231,10 +244,7 @@ export default function App() {
             className="login-button"
             onClick={() => {
               if (currentUser) {
-                if (window.confirm('Выйти из аккаунта?')) {
-                  clearCurrentUser();
-                  setCurrentUser(null);
-                }
+                setProfileOpen(true);
               } else {
                 setAuthOpen(true);
               }
@@ -665,6 +675,14 @@ export default function App() {
         </div>
       )}
 
+      {profileOpen && currentUser && (
+        <ProfilePage
+          currentUser={currentUser}
+          onSave={handleProfileSave}
+          onClose={() => setProfileOpen(false)}
+        />
+      )}
+
       {authOpen && (
         <AuthModal
           onClose={() => setAuthOpen(false)}
@@ -699,6 +717,7 @@ export default function App() {
             <CheckoutForm
               cart={cart}
               cartTotal={cartTotal}
+              currentUser={currentUser}
               onSubmit={handleCheckout}
               onCancel={() => setCheckoutOpen(false)}
             />

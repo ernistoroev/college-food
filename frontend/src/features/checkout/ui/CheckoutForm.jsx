@@ -5,9 +5,10 @@ export default function CheckoutForm({
   cart,
   cartTotal,
   onSubmit,
-  onCancel
+  onCancel,
+  currentUser
 }) {
-  const [studentName, setStudentName] = useState('');
+  const [studentName, setStudentName] = useState(currentUser?.name || '');
   const [pickupTime, setPickupTime] = useState('12:20');
 
   function handleSubmit(event) {
