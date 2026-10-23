@@ -1,3 +1,4 @@
+
 from django.contrib import admin
 
 from .models import Category, Dish
@@ -12,7 +13,21 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Dish)
 class DishAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'price', 'is_available']
-    list_editable = ['price', 'is_available']
+    list_display = [
+        'name',
+        'category',
+        'price',
+        'weight',
+        'weight_unit',
+        'portions_today',
+        'is_available',
+    ]
+    list_editable = [
+        'price',
+        'weight',
+        'weight_unit',
+        'portions_today',
+        'is_available',
+    ]
     list_filter = ['category', 'is_available']
     search_fields = ['name', 'description']

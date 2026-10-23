@@ -66,6 +66,7 @@ class MenuApiTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual([d['name'] for d in response.json()], ['Плов', 'Чай'])
 
+    
     def test_dish_fields(self):
         dish = self.client.get(f'/api/dishes/{self.plov.id}/').json()
         self.assertEqual(dish, {
@@ -73,10 +74,25 @@ class MenuApiTests(APITestCase):
             'name': 'Плов',
             'description': '',
             'price': 180.0,
+            'weight': 0,
+            'weight_unit': 'г',
+            'portions_today': 0,
             'image': None,
             'category': self.hot.id,
             'category_name': 'Горячее',
         })
+
+    def test_dish_weight_and_portions_today(self):
+        self.plov.weight = 350
+        self.plov.portions_today = 20
+        self.plov.save()
+
+        response = self.client.get(f'/api/dishes/{self.plov.id}/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['weight'], 350)
+        self.assertEqual(response.json()['portions_today'], 20)
+
 
     def test_hidden_dish_detail_not_found(self):
         response = self.client.get(f'/api/dishes/{self.hidden.id}/')
