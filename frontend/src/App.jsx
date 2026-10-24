@@ -12,6 +12,7 @@ import {
   Package
 } from 'lucide-react';
 
+import { QRCodeSVG } from 'qrcode.react';
 import './App.css';
 import { dishes, categories } from './entities/dish/model/dishes.js';
 import MenuPage from './pages/menu/ui/MenuPage.jsx';
@@ -50,6 +51,10 @@ export default function App() {
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+  const [paymentOrder, setPaymentOrder] = useState(null);
+  const [paymentSeconds, setPaymentSeconds] = useState(30);
+  const [paymentExpired, setPaymentExpired] = useState(false);
+
 
   const cartCount = getCartCount(cart);
   const cartTotal = getCartTotal(cart);
@@ -78,6 +83,22 @@ export default function App() {
       document.body.style.overflow = '';
     };
   }, [cartOpen, checkoutOpen]);
+
+
+  useEffect(() => {
+    if (!paymentOrder || paymentExpired) return;
+
+    if (paymentSeconds <= 0) {
+      setPaymentExpired(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setPaymentSeconds(seconds => seconds - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [paymentOrder, paymentSeconds, paymentExpired]);
 
   function addToCart(dish) {
     const currentDish = menuDishes.find(
@@ -135,30 +156,36 @@ export default function App() {
     const order = {
       id: Date.now(),
       ...orderData,
+      items: cart.map(item => ({ ...item })),
+      total: cartTotal,
       createdAt: new Date().toLocaleString('ru-RU'),
-      status: 'Принят'
+      status: 'Ожидает оплаты',
+    };
+
+    setPaymentOrder(order);
+    setPaymentSeconds(30);
+    setPaymentExpired(false);
+    setCheckoutOpen(false);
+  }
+
+  function finishPaymentDemo() {
+    if (!paymentOrder || paymentExpired) return;
+
+    const confirmedOrder = {
+      ...paymentOrder,
+      status: 'Принят',
     };
 
     try {
-      const updatedOrders = saveOrder(order);
-
+      const updatedOrders = saveOrder(confirmedOrder);
       setOrders(updatedOrders);
       setCart([]);
-      setCheckoutOpen(false);
+      setPaymentOrder(null);
       setCartOpen(false);
+      setCheckoutOpen(false);
       setOrdersOpen(true);
-
-      window.alert(
-        `Заказ №${order.id} оформлен!\n` +
-        `Имя: ${order.studentName}\n` +
-        `Время получения: ${order.pickupTime}\n` +
-        `Сумма: ${order.total} сом`
-      );
     } catch {
-      window.alert(
-        'Не удалось сохранить заказ в браузере. ' +
-        'Проверь настройки хранения данных.'
-      );
+      window.alert('Не удалось сохранить заказ. Проверь настройки хранения данных.');
     }
   }
 
@@ -721,6 +748,101 @@ export default function App() {
               onSubmit={handleCheckout}
               onCancel={() => setCheckoutOpen(false)}
             />
+          </section>
+        </div>
+      )}
+
+      {paymentOrder && (
+        <div className="cart-overlay">
+          <section
+            className="cart-panel payment-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Оплата заказа"
+          >
+            <button
+              type="button"
+              className="cart-close"
+              onClick={() => setPaymentOrder(null)}
+              aria-label="Закрыть оплату"
+            >
+              <X size={20} />
+            </button>
+
+            {paymentExpired ? (
+              <div className="payment-result">
+                <Clock size={44} color="#e9483b" />
+                <h2>Время истекло</h2>
+                <p>Время демонстрационной оплаты закончилось.</p>
+                <button
+                  type="button"
+                  className="checkout-button"
+                  onClick={() => {
+                    setPaymentSeconds(30);
+                    setPaymentExpired(false);
+                  }}
+                >
+                  Попробовать снова
+                </button>
+                <button
+                  type="button"
+                  className="checkout-cancel"
+                  onClick={() => setPaymentOrder(null)}
+                >
+                  Закрыть
+                </button>
+              </div>
+            ) : (
+              <>
+                <span className="eyebrow">COLLEGE FOOD</span>
+                <h2>Оплата заказа</h2>
+                <p>Заказ №{paymentOrder.id}</p>
+
+                <div className="payment-qr">
+                  <QRCodeSVG
+                    value={`COLLEGE-FOOD-DEMO-${paymentOrder.id}-${paymentOrder.total}`}
+                    size={200}
+                    level="M"
+                    includeMargin
+                  />
+                </div>
+
+                <p className="payment-hint">
+                  Отсканируй QR-код камерой телефона.
+                </p>
+
+                <div className="payment-total">
+                  <span>К оплате</span>
+                  <strong>{paymentOrder.total} сом</strong>
+                </div>
+
+                <div
+                  className="payment-timer"
+                  style={{
+                    '--timer-progress': `${(paymentSeconds / 30) * 100}%`,
+                  }}
+                >
+                  <div className="payment-timer-ring">
+                    <strong>
+                      00:{String(paymentSeconds).padStart(2, '0')}
+                    </strong>
+                    <span>до окончания</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="checkout-button"
+                  onClick={finishPaymentDemo}
+                >
+                  Я оплатил
+                </button>
+
+                <p className="payment-disclaimer">
+                  Деморежим: QR-код не принимает реальные платежи.
+                </p>
+              </>
+            )}
           </section>
         </div>
       )}

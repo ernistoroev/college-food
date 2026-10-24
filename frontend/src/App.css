@@ -2612,3 +2612,196 @@ img {
     gap: 12px !important;
   }
 }
+
+/* Компактный хедер на мобильных */
+@media (max-width: 600px) {
+  .header {
+    min-height: 0;
+    padding: 10px 14px 6px;
+    row-gap: 6px;
+  }
+
+  .header nav {
+    padding: 4px 0;
+    scrollbar-width: none;
+  }
+
+  .header nav::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Скроллбар категорий в цвет сайта */
+@media (max-width: 768px) {
+  .categories {
+    scrollbar-width: thin;
+    scrollbar-color: var(--red) #ececec;
+  }
+
+  .categories::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .categories::-webkit-scrollbar-track {
+    background: #ececec;
+    border-radius: 3px;
+  }
+
+  .categories::-webkit-scrollbar-thumb {
+    background: var(--red);
+    border-radius: 3px;
+  }
+}
+
+
+/* College Food — демонстрационный экран QR-оплаты */
+.payment-panel {
+  width: min(calc(100% - 28px), 480px);
+  max-height: 90dvh;
+  overflow-y: auto;
+  text-align: center;
+}
+
+.payment-panel h2 {
+  margin: 16px 0 8px;
+}
+
+.payment-qr {
+  display: flex;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 22px auto 12px;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 18px;
+}
+
+.payment-qr svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.payment-hint,
+.payment-disclaimer {
+  color: #777;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.payment-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  padding: 16px;
+  background: #fff5f3;
+  border-radius: 14px;
+}
+
+.payment-total strong {
+  font-size: 22px;
+}
+
+.payment-timer {
+  --timer-progress: 100%;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  margin: 20px auto;
+  border-radius: 50%;
+  background: conic-gradient(
+    #e9483b var(--timer-progress),
+    #eee var(--timer-progress)
+  );
+  transition: background 0.3s linear;
+  animation: payment-timer-pulse 1s ease-in-out infinite alternate;
+}
+
+.payment-timer-ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 94px;
+  height: 94px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.payment-timer-ring strong {
+  font-size: 25px;
+  font-variant-numeric: tabular-nums;
+}
+
+.payment-timer-ring span {
+  color: #777;
+  font-size: 11px;
+}
+
+.payment-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.payment-disclaimer {
+  margin-top: 14px;
+}
+
+@keyframes payment-timer-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .payment-timer {
+    animation: none;
+  }
+}
+
+/* Кнопка очистки корзины для тестирования */
+.cart-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.clear-cart-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid #f0d1cd;
+  border-radius: 12px;
+  background: #fff5f3;
+  color: #c83b30;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.clear-cart-button:hover {
+  background: #ffe7e3;
+  border-color: #e9aaa3;
+}
+
+@media (max-width: 420px) {
+  .cart-heading-actions {
+    gap: 6px;
+  }
+
+  .clear-cart-button {
+    gap: 5px;
+    padding: 8px;
+    font-size: 12px;
+  }
+}
