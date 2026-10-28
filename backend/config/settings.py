@@ -54,8 +54,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'menu',
+    'accounts',
+    'orders',
+    'reviews',
 ]
 
 MIDDLEWARE = [
@@ -122,9 +126,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# Russian: the admin and API error messages (shown on the frontend) are in Russian.
+LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Bishkek'
 
 USE_I18N = True
 
@@ -152,9 +157,14 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Django REST Framework
 # Prices go to the React frontend as numbers, not strings.
+# The frontend logs in with a token: header "Authorization: Token <key>".
 
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
 }
 
 

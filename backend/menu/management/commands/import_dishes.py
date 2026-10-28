@@ -1,8 +1,30 @@
 
 from decimal import Decimal
 
+from django.conf import settings
+from django.core.files import File
 from django.core.management.base import BaseCommand
 from menu.models import Category, Dish
+
+# Photos that already exist in frontend/public/images/ (the other dishes have no photo yet).
+IMAGES = {
+    "Плов по-восточному": "plov.jpg",
+    "Паста Болоньезе": "pasta.jpg",
+    "Лагман": "lagman.jpg",
+    "Манты": "manty.jpg",
+    "Котлета с пюре": "kotleta.jpg",
+    "Курица с рисом": "kuriza.jpg",
+    "Пельмени": "pelmeni.png",
+    "Гречка с мясом": "grechka.jpg",
+    "Куриный суп": "sup.jpg",
+    "Борщ": "borsh.jpg",
+    "Цезарь с курицей": "salat.jpg",
+    "Самса с мясом": "samsa.jpg",
+    "Чай": "tea.jpg",
+    "Компот": "kompot.jpg",
+}
+
+IMAGES_DIR = settings.BASE_DIR.parent / "frontend" / "public" / "images"
 
 
 DISHES = [
@@ -65,8 +87,10 @@ class Command(BaseCommand):
         created_count = 0
         updated_count = 0
 
+        images_count = 0
+
         for category_name, name, price, weight, portions, description in DISHES:
-            _, created = Dish.objects.update_or_create(
+            dish, created = Dish.objects.update_or_create(
                 category=categories[category_name],
                 name=name,
                 defaults={
@@ -84,8 +108,16 @@ class Command(BaseCommand):
             else:
                 updated_count += 1
 
+            # Attach the photo only if the dish has none, so photos uploaded in the admin are kept.
+            image_path = IMAGES_DIR / IMAGES.get(name, "")
+            if name in IMAGES and not dish.image and image_path.exists():
+                with image_path.open("rb") as image_file:
+                    dish.image.save(image_path.name, File(image_file), save=True)
+                images_count += 1
+
         self.stdout.write(
             self.style.SUCCESS(
-                f"Готово! Создано: {created_count}, обновлено: {updated_count}."
+                f"Готово! Создано: {created_count}, обновлено: {updated_count}, "
+                f"добавлено фото: {images_count}."
             )
         )
