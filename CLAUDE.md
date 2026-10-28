@@ -115,6 +115,7 @@ SQLite (`backend/db.sqlite3`).
 | `DJANGO_DEBUG` | `False` | для локальной разработки `True` (через `.env`) |
 | `DJANGO_ALLOWED_HOSTS` | пусто | список хостов через запятую, нужен при `DEBUG=False` |
 | `DJANGO_CORS_ALLOWED_ORIGINS` | пусто | адреса фронтенда через запятую, которым можно обращаться к API |
+| `DJANGO_CSRF_TRUSTED_ORIGINS` | пусто | на хостинге — `https://адрес`, чтобы работал вход в админку |
 
 `settings.py` сам читает `backend/.env` (без сторонних библиотек); реальные переменные окружения имеют приоритет.
 Файл `.env` в `.gitignore`, `.env.example` — коммитится.
@@ -163,6 +164,17 @@ npm run dev        # dev-сервер Vite на http://localhost:5173
 npm run build      # сборка в dist/
 npm run lint       # ESLint
 ```
+
+## Хостинг (демо)
+
+Демо выложено на PythonAnywhere, пошаговая инструкция — `DEPLOY.md`. Один адрес для всего: Django отдаёт
+API, админку, Swagger и собранный React-сайт. `npm run build:deploy` (в `frontend/`, режим `deploy`,
+`.env.deploy` → `VITE_API_URL=/api`) собирает сайт в `backend/frontend_build/` — эта папка **коммитится**,
+потому что на хостинге фронтенд не собирается. После изменений во фронтенде её нужно пересобрать.
+`whitenoise` отдаёт `staticfiles/` (после `collectstatic`, в `.gitignore`) и файлы сборки с корня сайта
+(`WHITENOISE_ROOT`), `config/views.py:frontend` отдаёт `index.html` на `/`. Медиа на хостинге раздаёт
+PythonAnywhere (Static files: `/media/`). Продакшен-настройки — через `.env`: `DJANGO_DEBUG=False`,
+`DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`.
 
 ## Соглашения
 
