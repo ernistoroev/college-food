@@ -167,7 +167,9 @@ npm run lint       # ESLint
 
 ## Хостинг (демо)
 
-Демо выложено на PythonAnywhere, пошаговая инструкция — `DEPLOY.md`. Один адрес для всего: Django отдаёт
+Демо: **https://morgart.pythonanywhere.com** (PythonAnywhere, аккаунт `morgart`), пошаговая инструкция —
+`DEPLOY.md`. WSGI-файл на сервере — одна строка, подключающая `config/wsgi.py`. В консоли PythonAnywhere
+вставлять команды по одной: многострочные (heredoc) ломаются из-за отступов при вставке. Один адрес для всего: Django отдаёт
 API, админку, Swagger и собранный React-сайт. `npm run build:deploy` (в `frontend/`, режим `deploy`,
 `.env.deploy` → `VITE_API_URL=/api`) собирает сайт в `backend/frontend_build/` — эта папка **коммитится**,
 потому что на хостинге фронтенд не собирается. После изменений во фронтенде её нужно пересобрать.
