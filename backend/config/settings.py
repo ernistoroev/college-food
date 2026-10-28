@@ -67,6 +67,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Serves static files and the built React site (see STATIC_ROOT and WHITENOISE_ROOT below).
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -148,6 +150,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# `python manage.py collectstatic` puts the admin and Swagger files here; whitenoise serves them.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# The React site built by `npm run build:deploy` (frontend/). whitenoise serves its files at the
+# site root (/assets/..., /images/...), and config.views.frontend gives index.html for "/".
+FRONTEND_BUILD_DIR = BASE_DIR / 'frontend_build'
+if FRONTEND_BUILD_DIR.exists():
+    WHITENOISE_ROOT = FRONTEND_BUILD_DIR
+
+# Needed for logging in to the admin over https on the hosting, e.g. https://name.pythonanywhere.com
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
 
 
 # Email
