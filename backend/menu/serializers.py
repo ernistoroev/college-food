@@ -1,3 +1,4 @@
+
 from rest_framework import serializers
 
 from .models import Category, Dish
@@ -10,8 +11,22 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class DishSerializer(serializers.ModelSerializer):
-    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_name = serializers.CharField(
+        source='category.name',
+        read_only=True
+    )
 
     class Meta:
         model = Dish
-        fields = ['id', 'name', 'description', 'price', 'image', 'category', 'category_name']
+        fields = [
+            'id',
+            'name',
+            'description',
+            'price',
+            'weight',
+            'weight_unit',
+            'portions_today',
+            'image',
+            'category',
+            'category_name',
+        ]
