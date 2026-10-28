@@ -1,4 +1,4 @@
-import { api } from '../../../shared/api/client.js';
+import { getList } from '../../../shared/api/client.js';
 
 export const ALL_CATEGORIES = 'Всё меню';
 
@@ -10,20 +10,22 @@ function toDish(dish) {
     category: dish.category_name,
     price: dish.price,
     image: dish.image,
-    stock: dish.portions_today,
+    // An unavailable dish stays in the menu but cannot be added: the card shows «На сегодня закончилось».
+    stock: dish.is_available ? dish.portions_today : 0,
     weight: dish.weight ? `${dish.weight} ${dish.weight_unit}` : '',
+    rating: dish.rating ? dish.rating.toFixed(1).replace('.', ',') : null,
     description: dish.description,
   };
 }
 
 export async function fetchMenu() {
   const [dishes, categories] = await Promise.all([
-    api.get('/dishes/'),
-    api.get('/categories/'),
+    getList('/dishes/'),
+    getList('/categories/'),
   ]);
 
   return {
-    dishes: dishes.data.map(toDish),
-    categories: [ALL_CATEGORIES, ...categories.data.map(category => category.name)],
+    dishes: dishes.map(toDish),
+    categories: [ALL_CATEGORIES, ...categories.map(category => category.name)],
   };
 }

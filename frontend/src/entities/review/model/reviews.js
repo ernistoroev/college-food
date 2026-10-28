@@ -1,18 +1,19 @@
-import { api } from '../../../shared/api/client.js';
+import { api, getList } from '../../../shared/api/client.js';
 
 function toReview(review) {
   return {
     id: review.id,
-    name: review.name,
+    name: review.user_name,
     rating: review.rating,
     text: review.text,
     createdAt: new Date(review.created_at).toLocaleDateString('ru-RU'),
   };
 }
 
+// The «Отзывы» page shows reviews of the canteen in general (dish=none), not of single dishes.
 export async function fetchReviews() {
-  const response = await api.get('/reviews/');
-  return response.data.map(toReview);
+  const reviews = await getList('/reviews/', { dish: 'none' });
+  return reviews.map(toReview);
 }
 
 export async function createReview({ rating, text }) {
