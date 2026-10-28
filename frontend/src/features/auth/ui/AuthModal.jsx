@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { X, UserRound, Mail, ArrowRight } from 'lucide-react';
-import { saveCurrentUser } from '../../../entities/auth/model/auth.js';
+import { X, UserRound, Mail, Lock, ArrowRight } from 'lucide-react';
+import { login, register } from '../../../entities/auth/model/auth.js';
+import { getErrorMessage } from '../../../shared/api/client.js';
 
 export default function AuthModal({ onClose, onLogin }) {
   const [mode, setMode] = useState('login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setError('');
 
@@ -22,14 +25,19 @@ export default function AuthModal({ onClose, onLogin }) {
       return;
     }
 
-    const user = {
-      name: mode === 'register' ? name.trim() : email.split('@')[0],
-      email: email.trim().toLowerCase()
-    };
+    setSending(true);
+    try {
+      const user = mode === 'register'
+        ? await register({ name: name.trim(), email: email.trim(), password })
+        : await login({ email: email.trim(), password });
 
-    saveCurrentUser(user);
-    onLogin(user);
-    onClose();
+      onLogin(user);
+      onClose();
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -92,10 +100,25 @@ export default function AuthModal({ onClose, onLogin }) {
             </span>
           </label>
 
+          <label>
+            Пароль
+            <span className="auth-input">
+              <Lock size={17} />
+              <input
+                type="password"
+                value={password}
+                onChange={event => setPassword(event.target.value)}
+                placeholder={mode === 'register' ? 'Не меньше 8 символов' : 'Твой пароль'}
+                autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                required
+              />
+            </span>
+          </label>
+
           {error && <p className="auth-error">{error}</p>}
 
-          <button className="auth-submit" type="submit">
-            {mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
+          <button className="auth-submit" type="submit" disabled={sending}>
+            {sending ? 'Подождите…' : mode === 'login' ? 'Войти' : 'Зарегистрироваться'}
             <ArrowRight size={17} />
           </button>
         </form>
@@ -111,10 +134,6 @@ export default function AuthModal({ onClose, onLogin }) {
           >
             {mode === 'login' ? 'Регистрация' : 'Войти'}
           </button>
-        </p>
-
-        <p className="auth-demo-note">
-          Демоверсия: вход сохраняется в этом браузере и пока не проверяет пароль или email.
         </p>
       </section>
     </div>

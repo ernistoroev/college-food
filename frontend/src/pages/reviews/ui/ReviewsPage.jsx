@@ -1,18 +1,27 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Star, MessageSquare, Send } from 'lucide-react';
-import { getReviews, addReview } from '../../../entities/review/model/reviews.js';
+import { fetchReviews, createReview } from '../../../entities/review/model/reviews.js';
+import { getErrorMessage } from '../../../shared/api/client.js';
 
 export default function ReviewsPage({ currentUser, onLogin }) {
-  const [reviews, setReviews] = useState(() => getReviews());
+  const [reviews, setReviews] = useState([]);
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [text, setText] = useState('');
+  const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
+
+  useEffect(() => {
+    fetchReviews()
+      .then(setReviews)
+      .catch(requestError => setError(getErrorMessage(requestError)));
+  }, []);
 
   const average = reviews.length
     ? reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length
     : 0;
 
-  function publishReview(event) {
+  async function publishReview(event) {
     event.preventDefault();
 
     if (!currentUser) {
@@ -22,15 +31,18 @@ export default function ReviewsPage({ currentUser, onLogin }) {
 
     if (!text.trim()) return;
 
-    const updated = addReview({
-      name: currentUser.name,
-      rating,
-      text: text.trim()
-    });
-
-    setReviews(updated);
-    setText('');
-    setRating(5);
+    setSending(true);
+    setError('');
+    try {
+      const review = await createReview({ rating, text: text.trim() });
+      setReviews(old => [review, ...old]);
+      setText('');
+      setRating(5);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -130,7 +142,9 @@ export default function ReviewsPage({ currentUser, onLogin }) {
             <p className="review-login-note">Чтобы опубликовать отзыв, нужно войти в аккаунт.</p>
           )}
 
-          <button className="review-submit" type="submit">
+          {error && <p className="review-login-note">{error}</p>}
+
+          <button className="review-submit" type="submit" disabled={sending}>
             {currentUser ? <><Send size={17} /> Опубликовать отзыв</> : 'Войти и оставить отзыв'}
           </button>
         </form>

@@ -14,8 +14,9 @@ import {
 
 import { QRCodeSVG } from 'qrcode.react';
 import './App.css';
-import { dishes, categories } from './entities/dish/model/dishes.js';
+import { fetchMenu, ALL_CATEGORIES } from './entities/dish/api/dishes.js';
 import MenuPage from './pages/menu/ui/MenuPage.jsx';
+import { getErrorMessage } from './shared/api/client.js';
 
 import {
   addItemToCart,
@@ -25,45 +26,74 @@ import {
   getCartTotal
 } from './entities/cart/model/cart.js';
 
-import {
-  getSavedOrders,
-  saveOrder
-} from './entities/order/model/orders.js';
+import { fetchOrders, createOrder } from './entities/order/model/orders.js';
 
 import CheckoutForm from './features/checkout/ui/CheckoutForm.jsx';
 import ReviewsPage from './pages/reviews/ui/ReviewsPage.jsx';
 import AuthModal from './features/auth/ui/AuthModal.jsx';
 import ProfilePage from './pages/profile/ui/ProfilePage.jsx';
-import { getCurrentUser, saveCurrentUser, clearCurrentUser } from './entities/auth/model/auth.js';
+import { fetchCurrentUser, logout, updateProfile } from './entities/auth/model/auth.js';
 
 export default function App() {
-
-
-  const [category, setCategory] = useState('Всё меню');
-  const [menuDishes, setMenuDishes] = useState(dishes);
+  const [category, setCategory] = useState(ALL_CATEGORIES);
+  const [menuDishes, setMenuDishes] = useState([]);
+  const [categories, setCategories] = useState([ALL_CATEGORIES]);
+  const [menuLoading, setMenuLoading] = useState(true);
+  const [menuError, setMenuError] = useState('');
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [orders, setOrders] = useState(() => getSavedOrders());
+  const [orders, setOrders] = useState([]);
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(() => getCurrentUser());
+  const [currentUser, setCurrentUser] = useState(null);
   const [paymentOrder, setPaymentOrder] = useState(null);
   const [paymentSeconds, setPaymentSeconds] = useState(30);
   const [paymentExpired, setPaymentExpired] = useState(false);
-
+  const [paying, setPaying] = useState(false);
 
   const cartCount = getCartCount(cart);
   const cartTotal = getCartTotal(cart);
 
   const filtered = menuDishes.filter(
     dish =>
-      (category === 'Всё меню' || dish.category === category) &&
+      (category === ALL_CATEGORIES || dish.category === category) &&
       dish.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Menu and categories come from the backend; portions left (stock) are counted there too.
+  function loadMenu() {
+    return fetchMenu()
+      .then(menu => {
+        setMenuDishes(menu.dishes);
+        setCategories(menu.categories);
+        setMenuError('');
+      })
+      .catch(error => setMenuError(getErrorMessage(error)))
+      .finally(() => setMenuLoading(false));
+  }
+
+  // Called on login and logout: «Мои заказы» belong to the logged-in student.
+  function changeUser(user) {
+    setCurrentUser(user);
+    if (!user) {
+      setOrders([]);
+      return;
+    }
+
+    fetchOrders()
+      .then(setOrders)
+      .catch(() => setOrders([]));
+  }
+
+  useEffect(() => {
+    loadMenu();
+    // If a token from the last visit still works, the student stays logged in.
+    fetchCurrentUser().then(changeUser);
+  }, []);
 
   useEffect(() => {
     function handleEscape(event) {
@@ -168,36 +198,45 @@ export default function App() {
     setCheckoutOpen(false);
   }
 
-  function finishPaymentDemo() {
-    if (!paymentOrder || paymentExpired) return;
+  // The payment is a demo; the order itself is saved on the server after «Я оплатил».
+  async function finishPaymentDemo() {
+    if (!paymentOrder || paymentExpired || paying) return;
 
-    const confirmedOrder = {
-      ...paymentOrder,
-      status: 'Принят',
-    };
-
+    setPaying(true);
     try {
-      const updatedOrders = saveOrder(confirmedOrder);
-      setOrders(updatedOrders);
+      const order = await createOrder(paymentOrder);
+      setOrders(old => [order, ...old]);
       setCart([]);
       setPaymentOrder(null);
       setCartOpen(false);
       setCheckoutOpen(false);
       setOrdersOpen(true);
-    } catch {
-      window.alert('Не удалось сохранить заказ. Проверь настройки хранения данных.');
+      setReviewsOpen(false);
+      loadMenu();
+    } catch (error) {
+      window.alert(getErrorMessage(error, 'Не удалось оформить заказ.'));
+    } finally {
+      setPaying(false);
     }
   }
 
-  function handleProfileSave(user) {
+  // Returns an error text for the profile form, or null if everything is saved.
+  async function handleProfileSave(profile) {
     try {
-      saveCurrentUser(user);
+      const user = await updateProfile(profile);
       setCurrentUser(user);
       setProfileOpen(false);
-      window.alert('Профиль сохранён!');
-    } catch {
-      window.alert('Не удалось сохранить профиль. Попробуй выбрать изображение меньшего размера.');
+      return null;
+    } catch (error) {
+      return getErrorMessage(error, 'Не удалось сохранить профиль.');
     }
+  }
+
+  async function handleLogout() {
+    await logout().catch(() => {});
+    changeUser(null);
+    setProfileOpen(false);
+    setOrdersOpen(false);
   }
 
   function showMenu() {
@@ -206,6 +245,10 @@ export default function App() {
   }
 
   function showOrders() {
+    if (!currentUser) {
+      setAuthOpen(true);
+      return;
+    }
     setOrdersOpen(true);
     setReviewsOpen(false);
   }
@@ -559,6 +602,8 @@ export default function App() {
             setSearch={setSearch}
             filtered={filtered}
             addToCart={addToCart}
+            loading={menuLoading}
+            error={menuError}
           />
         )}
       </main>
@@ -621,7 +666,11 @@ export default function App() {
                 <div className="cart-items">
                   {cart.map(item => (
                     <article className="cart-item" key={item.id}>
-                      <img src={item.image} alt={item.name} />
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} />
+                      ) : (
+                        <div className="cart-item-no-photo"><Utensils size={24} /></div>
+                      )}
 
                       <div className="cart-item-info">
                         <h3>{item.name}</h3>
@@ -686,7 +735,12 @@ export default function App() {
                     className="checkout-button"
                     onClick={() => {
                       setCartOpen(false);
-                      setCheckoutOpen(true);
+                      // Orders are saved for an account, so the student has to log in first.
+                      if (currentUser) {
+                        setCheckoutOpen(true);
+                      } else {
+                        setAuthOpen(true);
+                      }
                     }}
                   >
                     Оформить заказ
@@ -707,13 +761,14 @@ export default function App() {
           currentUser={currentUser}
           onSave={handleProfileSave}
           onClose={() => setProfileOpen(false)}
+          onLogout={handleLogout}
         />
       )}
 
       {authOpen && (
         <AuthModal
           onClose={() => setAuthOpen(false)}
-          onLogin={user => setCurrentUser(user)}
+          onLogin={changeUser}
         />
       )}
 
@@ -834,8 +889,9 @@ export default function App() {
                   type="button"
                   className="checkout-button"
                   onClick={finishPaymentDemo}
+                  disabled={paying}
                 >
-                  Я оплатил
+                  {paying ? 'Сохраняем заказ…' : 'Я оплатил'}
                 </button>
 
                 <p className="payment-disclaimer">

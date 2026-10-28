@@ -1,17 +1,34 @@
-const STORAGE_KEY = 'college-food-orders';
+import { api } from '../../../shared/api/client.js';
 
-export function getSavedOrders() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
+// Field names in the shape the «Мои заказы» page already uses.
+function toOrder(order) {
+  return {
+    id: order.id,
+    studentName: order.student_name,
+    pickupTime: order.pickup_time,
+    status: order.status_display,
+    total: order.total,
+    createdAt: new Date(order.created_at).toLocaleString('ru-RU'),
+    items: order.items.map((item, index) => ({
+      id: item.dish ?? `deleted-${index}`,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    })),
+  };
 }
 
-export function saveOrder(order) {
-  const orders = getSavedOrders();
-  const updatedOrders = [order, ...orders];
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedOrders));
-  return updatedOrders;
+export async function fetchOrders() {
+  const response = await api.get('/orders/');
+  return response.data.map(toOrder);
+}
+
+// The server checks the portions and counts the total itself, so only ids and quantities are sent.
+export async function createOrder({ studentName, pickupTime, items }) {
+  const response = await api.post('/orders/', {
+    student_name: studentName,
+    pickup_time: pickupTime,
+    items: items.map(item => ({ dish: item.id, quantity: item.quantity })),
+  });
+  return toOrder(response.data);
 }
