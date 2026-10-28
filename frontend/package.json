@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:deploy": "vite build --mode deploy --outDir ../backend/frontend_build --emptyOutDir",
     "lint": "eslint .",
     "preview": "vite preview"
   },

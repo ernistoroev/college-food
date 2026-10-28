@@ -62,6 +62,8 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media/
+# collectstatic output (admin and Swagger files), made on the hosting
+staticfiles/
 
 # Flask stuff:
 instance/
