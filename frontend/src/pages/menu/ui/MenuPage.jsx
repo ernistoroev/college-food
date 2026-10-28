@@ -8,7 +8,9 @@ export default function MenuPage({
   search,
   setSearch,
   filtered,
-  addToCart
+  addToCart,
+  loading,
+  error
 }) {
   const [brokenImages, setBrokenImages] = useState([]);
 
@@ -75,7 +77,7 @@ export default function MenuPage({
 
         <div className="dish-grid">
           {filtered.map(dish => {
-            const imageBroken = brokenImages.includes(dish.id);
+            const imageBroken = !dish.image || brokenImages.includes(dish.id);
 
             return (
               <article className="dish" key={dish.id}>
@@ -108,8 +110,12 @@ export default function MenuPage({
 
                   <div className="dish-meta">
                     <span>{dish.weight}</span>
-                    <span className="meta-dot">·</span>
-                    <span className="dish-rating">★ {dish.rating}</span>
+                    {dish.rating && (
+                      <>
+                        <span className="meta-dot">·</span>
+                        <span className="dish-rating">★ {dish.rating}</span>
+                      </>
+                    )}
                   </div>
 
                   <p className="dish-description">{dish.description}</p>
@@ -139,7 +145,20 @@ export default function MenuPage({
           })}
         </div>
 
-        {filtered.length === 0 && (
+        {loading && (
+          <div className="empty">
+            <h3>Загружаем меню…</h3>
+          </div>
+        )}
+
+        {error && (
+          <div className="empty">
+            <h3>Не удалось загрузить меню</h3>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length === 0 && (
           <div className="empty">
             <h3>Ничего не найдено</h3>
             <p>Попробуй другое название блюда.</p>

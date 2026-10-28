@@ -1,25 +1,21 @@
-const STORAGE_KEY = 'college-food-reviews';
+import { api } from '../../../shared/api/client.js';
 
-export function getReviews() {
-  try {
-    const value = localStorage.getItem(STORAGE_KEY);
-    return value ? JSON.parse(value) : [];
-  } catch {
-    return [];
-  }
+function toReview(review) {
+  return {
+    id: review.id,
+    name: review.name,
+    rating: review.rating,
+    text: review.text,
+    createdAt: new Date(review.created_at).toLocaleDateString('ru-RU'),
+  };
 }
 
-export function addReview(review) {
-  const reviews = getReviews();
-  const updated = [
-    {
-      ...review,
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      createdAt: new Date().toLocaleDateString('ru-RU')
-    },
-    ...reviews
-  ];
+export async function fetchReviews() {
+  const response = await api.get('/reviews/');
+  return response.data.map(toReview);
+}
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  return updated;
+export async function createReview({ rating, text }) {
+  const response = await api.post('/reviews/', { rating, text });
+  return toReview(response.data);
 }

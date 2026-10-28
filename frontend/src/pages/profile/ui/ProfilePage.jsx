@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import { Camera, UserRound, X } from 'lucide-react';
 
-export default function ProfilePage({ currentUser, onSave, onClose }) {
+export default function ProfilePage({ currentUser, onSave, onClose, onLogout }) {
   const [name, setName] = useState(currentUser?.name || '');
   const [course, setCourse] = useState(currentUser?.course || '');
   const [faculty, setFaculty] = useState(currentUser?.faculty || '');
   const [avatar, setAvatar] = useState(currentUser?.avatar || '');
+  const [avatarFile, setAvatarFile] = useState(null);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
   const fileInput = useRef(null);
 
   function handleAvatarChange(event) {
@@ -23,16 +25,18 @@ export default function ProfilePage({ currentUser, onSave, onClose }) {
       return;
     }
 
+    // The file goes to the server on save; here it is only read for the preview.
     const reader = new FileReader();
     reader.onload = () => {
       setAvatar(String(reader.result));
+      setAvatarFile(file);
       setError('');
     };
     reader.onerror = () => setError('Не удалось загрузить изображение.');
     reader.readAsDataURL(file);
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (name.trim().length < 2) {
@@ -40,13 +44,15 @@ export default function ProfilePage({ currentUser, onSave, onClose }) {
       return;
     }
 
-    onSave({
-      ...currentUser,
+    setSaving(true);
+    const saveError = await onSave({
       name: name.trim(),
       course: course.trim(),
       faculty: faculty.trim(),
-      avatar
+      avatarFile
     });
+    setSaving(false);
+    if (saveError) setError(saveError);
   }
 
   return (
@@ -199,6 +205,7 @@ export default function ProfilePage({ currentUser, onSave, onClose }) {
 
           <button
             type="submit"
+            disabled={saving}
             style={{
               width: '100%',
               border: 0,
@@ -211,12 +218,31 @@ export default function ProfilePage({ currentUser, onSave, onClose }) {
               cursor: 'pointer'
             }}
           >
-            Сохранить изменения
+            {saving ? 'Сохраняем…' : 'Сохранить изменения'}
           </button>
         </form>
 
+        <button
+          type="button"
+          onClick={onLogout}
+          style={{
+            width: '100%',
+            marginTop: 12,
+            border: '1px solid #ddd',
+            borderRadius: 12,
+            padding: 13,
+            background: '#ffffff',
+            color: '#202020',
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer'
+          }}
+        >
+          Выйти из аккаунта
+        </button>
+
         <p style={{ color: '#666666', fontSize: 12, lineHeight: 1.6, marginBottom: 0 }}>
-          Данные сохраняются в этом браузере и не синхронизируются с другими устройствами.
+          {currentUser?.email}
         </p>
       </section>
     </div>

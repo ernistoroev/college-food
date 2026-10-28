@@ -2,13 +2,14 @@
 
 ## О проекте
 
-**College Food** — меню столовой колледжа: блюда, цены, фото, поиск и фильтр по категориям.
-Во фронтенде есть корзина, оформление заказа и «Мои заказы», но они работают только в браузере (`localStorage`).
-**На бэкенде заказов и оплаты нет** — не добавлять их без явной просьбы.
+**College Food** — сайт столовой колледжа: меню с поиском и категориями, корзина, заказ с выбором времени
+получения, «Мои заказы», регистрация и вход, профиль студента, отзывы.
+Всё хранится на бэкенде. **Оплата — только демо** (QR-код без настоящих платежей), реальную оплату
+не добавлять без явной просьбы.
 
 Репозиторий разделён на две независимые части:
 
-- **`backend/`** — Django + Django REST Framework, отдаёт меню через REST API (JSON). Backend пишет владелец репозитория.
+- **`backend/`** — Django + Django REST Framework, REST API (JSON) и админка. Backend пишет владелец репозитория.
 - **`frontend/`** — React + Vite, сайт для студентов.
 
 Команды каждой части запускаются из её папки (`cd backend` / `cd frontend`).
@@ -18,17 +19,21 @@
 ```
 backend/
   config/            # настройки проекта: settings.py, urls.py, wsgi/asgi
-  menu/              # основное приложение: модели, API меню, админка, тесты
+  menu/              # меню: Category, Dish, API меню, команда import_dishes
+  accounts/          # регистрация, вход по токену, профиль студента (Profile)
+  orders/            # заказы (Order, OrderItem)
+  reviews/           # отзывы (Review)
   manage.py
   requirements.txt
   .env.example       # пример настроек; локальный .env, venv/, db.sqlite3, media/ — тоже здесь, в .gitignore
 frontend/
   src/
-    App.jsx          # корень приложения: состояние корзины и заказов, шапка, корзина, «Мои заказы»
-    pages/menu/      # страница меню (MenuPage)
-    entities/        # dish (данные блюд), cart (логика корзины), order (заказы в localStorage)
-    features/        # checkout (форма оформления заказа)
-  public/images/     # фото блюд
+    App.jsx          # корень приложения: меню, корзина, оплата (демо), «Мои заказы», модальные окна
+    shared/api/      # client.js: axios с адресом API и токеном, getErrorMessage
+    entities/        # запросы к API: dish, auth, order, review; cart — логика корзины (в памяти)
+    pages/           # menu, reviews, profile
+    features/        # auth (окно входа), checkout (форма заказа)
+  public/images/     # фото блюд (import_dishes копирует их в backend/media/dishes/)
   index.html, vite.config.js, eslint.config.js, package.json
 .gitignore           # общий для обеих частей
 CLAUDE.md
@@ -40,16 +45,34 @@ CLAUDE.md
 django-cors-headers, Pillow (для `ImageField`), SQLite (`backend/db.sqlite3`).
 Зависимости — в `backend/requirements.txt`. После установки нового пакета: `pip freeze > requirements.txt`.
 
-Модели в `menu`: `Category` (название, порядок) и `Dish` (категория, название, описание, цена в сомах,
-фото в `media/dishes/`, флаг `is_available`), обе зарегистрированы в админке.
-Категорию с блюдами удалить нельзя (`on_delete=PROTECT`).
+Модели:
+- `menu`: `Category` (название, порядок) и `Dish` (категория, название, описание, цена в сомах, вес и
+  единица `г`/`мл`, `portions_today` — порций на сегодня, фото в `media/dishes/`, флаг `is_available`).
+  Категорию с блюдами удалить нельзя (`on_delete=PROTECT`).
+- `accounts`: стандартный `User` (почта = `username`, имя = `first_name`) + `Profile` (курс, факультет, аватар).
+- `orders`: `Order` (пользователь, имя студента, время получения из `PICKUP_TIMES`, статус, сумма) и
+  `OrderItem` (блюдо, копия названия и цены на момент заказа, количество).
+- `reviews`: `Review` (пользователь, оценка 1–5, текст).
 
-API (только чтение, `menu/urls.py` через `DefaultRouter`, подключён в `config/urls.py` под `/api/`):
-- `GET /api/categories/` — категории в порядке `order`;
-- `GET /api/dishes/` — только блюда с `is_available=True`, фильтр `?category=<id>`; `GET /api/dishes/<id>/`.
+API (всё под `/api/`, авторизация — заголовок `Authorization: Token <key>`):
+- `GET /api/categories/`, `GET /api/dishes/`, `GET /api/dishes/<id>/` — меню, только чтение; в меню только
+  `is_available=True`, фильтр `?category=<id>`;
+- `POST /api/auth/register/` `{name, email, password}`, `POST /api/auth/login/` `{email, password}` → `{token, user}`;
+  `POST /api/auth/logout/`; `GET`/`PATCH /api/auth/me/` (имя, курс, факультет, аватар — multipart);
+- `GET /api/orders/` — заказы текущего пользователя; `POST /api/orders/` `{student_name, pickup_time, items: [{dish, quantity}]}`.
+  Сумму считает сервер по ценам из базы; `portions_today` проверяется и уменьшается в одной транзакции
+  (`select_for_update`), при нехватке порций — 400 и ничего не списывается;
+- `GET /api/reviews/` — всем; `POST /api/reviews/` `{rating, text}` — только вошедшим.
 Цена отдаётся числом (`COERCE_DECIMAL_TO_STRING = False`), `image` — полный URL или `null`.
+Язык `ru` — сообщения об ошибках API на русском, фронтенд показывает их как есть. Часовой пояс `Asia/Bishkek`.
 Поиска по названию в API нет: `icontains` в SQLite не учитывает регистр кириллицы.
 Медиафайлы: `MEDIA_URL = '/media/'`, `MEDIA_ROOT = BASE_DIR / 'media'` (`BASE_DIR` — это `backend/`).
+
+В админке: блюда (вес, порции, наличие правятся прямо в списке), заказы (статус меняется в списке:
+«Принят» → «Готовится» → «Готов к выдаче» → «Выдан»), отзывы, пользователи с профилем.
+
+`python manage.py import_dishes` — загружает 28 блюд меню (команда Ханзады) и прикрепляет фото из
+`frontend/public/images/`, если у блюда фото ещё нет.
 
 ### Переменные окружения
 
@@ -71,23 +94,27 @@ venv\Scripts\Activate.ps1          # активировать окружение
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env        # один раз: включает DEBUG и CORS для локальной разработки
 python manage.py migrate
+python manage.py import_dishes     # один раз: меню и фото
 python manage.py createsuperuser   # доступ к /admin/
 python manage.py runserver         # http://127.0.0.1:8000
 python manage.py makemigrations    # после изменения моделей
-python manage.py test menu         # тесты приложения menu
+python manage.py test              # все тесты
 ```
 
 ## Frontend
 
-Стек: React 19, Vite 8, ESLint, lucide-react (иконки). axios и react-router-dom установлены, но пока не используются.
-Зависимости — в `frontend/package.json` / `package-lock.json`.
+Стек: React 19, Vite 8, ESLint, lucide-react (иконки), axios (запросы к API), qrcode.react (QR демо-оплаты).
+react-router-dom установлен, но не используется. Зависимости — в `frontend/package.json` / `package-lock.json`.
 
-Текущее состояние: к API фронтенд **не подключён** — 28 блюд и категории захардкожены в
-`src/entities/dish/model/dishes.js` (с полями `stock`, `weight`, `rating`, которых нет в модели `Dish`).
-Фото — из `public/images/`, для части блюд файлов нет, тогда показывается заглушка.
-Поиск и фильтр по категории — на клиенте. Остаток порций (`stock`) уменьшается при добавлении в корзину,
-только в памяти браузера.
-`src/App.backup.jsx`, `src/App.backup2.jsx`, `src/App.css.save` — старые копии, нигде не используются.
+Адрес API — `VITE_API_URL`, по умолчанию `http://127.0.0.1:8000/api` (`src/shared/api/client.js`).
+Токен хранится в `localStorage` (`college-food-token`); при загрузке страницы `fetchCurrentUser()` проверяет его.
+Меню, заказы, отзывы и профиль — с сервера; модули в `src/entities/*` переводят поля API (`portions_today`,
+`status_display`, …) в имена, которые использует разметка (`stock`, `status`, …).
+Корзина живёт только в памяти; при добавлении `stock` уменьшается на экране, настоящий остаток считает сервер,
+после заказа меню перезагружается. Оформить заказ, открыть «Мои заказы» и оставить отзыв можно только после входа.
+Поиск и фильтр по категории — на клиенте.
+`src/App.backup.jsx`, `src/App.backup2.jsx`, `src/App.css.save` и другие `*.backup` / `*.before-*` — старые
+копии, нигде не используются.
 
 ### Команды (из `frontend/`)
 
@@ -101,8 +128,9 @@ npm run lint       # ESLint
 ## Соглашения
 
 - API — только через DRF (сериализаторы + ViewSet/generic views), ответы в JSON для React-фронтенда.
-- Маршруты API держать под префиксом `/api/` (`menu/urls.py`, подключённый через `include` в `config/urls.py`).
-- Публичное API меню — только чтение; редактирование меню — через Django admin.
+- Маршруты API держать под префиксом `/api/`: у каждого приложения свой `urls.py`, подключённый через `include` в `config/urls.py`.
+- API меню — только чтение; редактирование меню и статусов заказов — через Django admin.
+- Не доверять данным из браузера: цены, суммы, автора отзыва и владельца заказа берёт сервер.
 - CORS — через `django-cors-headers`; разрешённые адреса фронтенда в `DJANGO_CORS_ALLOWED_ORIGINS`.
 - В dev медиа раздаются через `static()` в `config/urls.py` при `DEBUG = True`.
 - `venv/`, `db.sqlite3`, `media/`, `.env`, `node_modules/`, `dist/` в `.gitignore` — не коммитить.
