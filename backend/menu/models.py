@@ -73,8 +73,12 @@ class Dish(models.Model):
     is_available = models.BooleanField(
         'в наличии',
         default=True,
-        help_text='Снимите галочку, чтобы скрыть блюдо из меню.'
+        help_text='Снимите галочку, если блюда сейчас нет: оно останется в меню с пометкой и его нельзя будет заказать.'
     )
+
+    # The name in lower case, filled in save(). SQLite cannot compare Cyrillic letters without
+    # case, so the search compares lower-case strings instead.
+    search_name = models.CharField(max_length=200, editable=False, default='')
 
     created_at = models.DateTimeField(
         'создано',
@@ -97,3 +101,10 @@ class Dish(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.search_name = self.name.lower()
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None and 'name' in update_fields:
+            kwargs['update_fields'] = {*update_fields, 'search_name'}
+        super().save(*args, **kwargs)

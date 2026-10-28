@@ -1,7 +1,7 @@
-import { api, getToken, setToken } from '../../../shared/api/client.js';
+import { api, clearTokens, getAccessToken, setTokens } from '../../../shared/api/client.js';
 
-async function saveSession(response) {
-  setToken(response.data.token);
+function saveSession(response) {
+  setTokens({ access: response.data.access, refresh: response.data.refresh });
   return response.data.user;
 }
 
@@ -13,25 +13,22 @@ export function login({ email, password }) {
   return api.post('/auth/login/', { email, password }).then(saveSession);
 }
 
-// Returns the logged-in user, or null if there is no token or it no longer works.
+// Returns the logged-in user (with role: 'student' / 'staff'), or null if there is no working token.
 export async function fetchCurrentUser() {
-  if (!getToken()) return null;
+  if (!getAccessToken()) return null;
 
   try {
     const response = await api.get('/auth/me/');
     return response.data;
   } catch (error) {
-    if (error.response?.status === 401) setToken(null);
+    if (error.response?.status === 401) clearTokens();
     return null;
   }
 }
 
+// JWT has no logout on the server: forgetting the tokens is enough.
 export async function logout() {
-  try {
-    await api.post('/auth/logout/');
-  } finally {
-    setToken(null);
-  }
+  clearTokens();
 }
 
 // FormData, not JSON, because the avatar is a file.

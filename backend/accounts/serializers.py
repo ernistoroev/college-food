@@ -3,40 +3,60 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from .models import Profile
+from .permissions import get_role
 
 User = get_user_model()
 
 
 def get_profile(user):
-    profile, _ = Profile.objects.get_or_create(user=user)
-    return profile
+    # user.profile is cached by Django after the first access, so this is one query per user.
+    try:
+        return user.profile
+    except Profile.DoesNotExist:
+        return Profile.objects.create(user=user)
 
 
 class UserSerializer(serializers.Serializer):
     """What the frontend gets about the current user."""
 
-    def to_representation(self, user):
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(source='first_name', read_only=True)
+    email = serializers.EmailField(read_only=True)
+    role = serializers.SerializerMethodField(help_text='student — студент, staff — сотрудник столовой.')
+    course = serializers.SerializerMethodField()
+    faculty = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField(help_text='Полный URL картинки или null.')
+
+    def get_role(self, user) -> str:
+        return get_role(user)
+
+    def get_course(self, user) -> str:
+        return get_profile(user).course
+
+    def get_faculty(self, user) -> str:
+        return get_profile(user).faculty
+
+    def get_avatar(self, user) -> str | None:
         profile = get_profile(user)
+        if not profile.avatar:
+            return None
         request = self.context.get('request')
-        avatar = None
-        if profile.avatar:
-            avatar = profile.avatar.url
-            if request is not None:
-                avatar = request.build_absolute_uri(avatar)
-        return {
-            'id': user.id,
-            'name': user.first_name,
-            'email': user.email,
-            'course': profile.course,
-            'faculty': profile.faculty,
-            'avatar': avatar,
-        }
+        url = profile.avatar.url
+        return request.build_absolute_uri(url) if request is not None else url
+
+
+class TokensSerializer(serializers.Serializer):
+    """The answer of login and registration (only for the API documentation)."""
+
+    access = serializers.CharField(help_text='Для заголовка Authorization: Bearer <access>, живёт 30 минут.')
+    refresh = serializers.CharField(help_text='Для /api/auth/refresh/, живёт 7 дней.')
+    user = UserSerializer()
 
 
 class RegisterSerializer(serializers.Serializer):
     name = serializers.CharField(min_length=2, max_length=80)
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(help_text='Почта — это логин.')
+    password = serializers.CharField(write_only=True, help_text='Не короче 8 символов и не слишком простой.')
 
     def validate_email(self, value):
         email = value.strip().lower()

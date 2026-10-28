@@ -1,4 +1,4 @@
-import { api } from '../../../shared/api/client.js';
+import { api, getList } from '../../../shared/api/client.js';
 
 // Field names in the shape the «Мои заказы» page already uses.
 function toOrder(order) {
@@ -11,7 +11,7 @@ function toOrder(order) {
     createdAt: new Date(order.created_at).toLocaleString('ru-RU'),
     items: order.items.map((item, index) => ({
       id: item.dish ?? `deleted-${index}`,
-      name: item.name,
+      name: item.dish_name,
       price: item.price,
       quantity: item.quantity,
     })),
@@ -19,8 +19,8 @@ function toOrder(order) {
 }
 
 export async function fetchOrders() {
-  const response = await api.get('/orders/');
-  return response.data.map(toOrder);
+  const orders = await getList('/orders/');
+  return orders.map(toOrder);
 }
 
 // The server checks the portions and counts the total itself, so only ids and quantities are sent.

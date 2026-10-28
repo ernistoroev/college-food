@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 import os
+import sys
+from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -54,12 +56,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework.authtoken',
+    'drf_spectacular',
     'corsheaders',
     'menu',
     'accounts',
     'orders',
     'reviews',
+    'staff',
 ]
 
 MIDDLEWARE = [
@@ -122,6 +125,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Only while running `manage.py test`: a fast password hasher, so tests do not wait for the slow
+# (and therefore safe) default one. Real passwords always use the default hasher.
+if 'test' in sys.argv:
+    PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
@@ -157,14 +165,37 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Django REST Framework
 # Prices go to the React frontend as numbers, not strings.
-# The frontend logs in with a token: header "Authorization: Token <key>".
+# The frontend logs in with JWT: header "Authorization: Bearer <access>".
+# SessionAuthentication is kept for the browsable API when logged in to the admin.
 
 REST_FRAMEWORK = {
     'COERCE_DECIMAL_TO_STRING': False,
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
+    'DEFAULT_PAGINATION_CLASS': 'config.pagination.StandardPagination',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# API documentation: /api/schema/ (OpenAPI file) and /api/docs/ (Swagger page).
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'College Food API',
+    'DESCRIPTION': (
+        'API столовой колледжа: меню, вход, заказы, чат по заказу, отзывы и панель сотрудника.\n\n'
+        'Авторизация: получите `access` в `/api/auth/login/` и передавайте заголовок '
+        '`Authorization: Bearer <access>`. Роль пользователя — поле `user.role` (`student` / `staff`).\n\n'
+        'Списки приходят страницами: `{count, next, previous, results}`, параметры `?page=` и `?page_size=` (до 100).'
+    ),
+    'VERSION': '1.0.0',
+    # Separate request and response schemas, so file uploads show up as multipart in Swagger.
+    'COMPONENT_SPLIT_REQUEST': True,
+}
+
+# JWT tokens are signed with SECRET_KEY (from the environment).
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
 
