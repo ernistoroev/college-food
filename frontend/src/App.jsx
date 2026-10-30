@@ -259,7 +259,7 @@ export default function App() {
   }
 
   return (
-    <div className="app" style={{display: 'flex', flexDirection: 'column', minHeight: '100vh'}}>
+    <div className={`app${cartCount > 0 ? " app-with-cart" : ""}`} style={{display: 'flex', flexDirection: 'column', minHeight: '100vh'}}>
       <header className="header">
         <a
           href="#menu"
@@ -602,6 +602,8 @@ export default function App() {
             setSearch={setSearch}
             filtered={filtered}
             addToCart={addToCart}
+            removeFromCart={removeFromCart}
+            cart={cart}
             loading={menuLoading}
             error={menuError}
           />
@@ -613,6 +615,16 @@ export default function App() {
         <span>Вкусная еда для больших идей.</span>
         <small>Пн–Пт · 08:00–16:00 · © 2026 College Food</small>
       </footer>
+
+      {cartCount > 0 && !cartOpen && !checkoutOpen && !paymentOrder && !authOpen && !profileOpen && (
+        <div className="cart-dock">
+          <button type="button" className="cart-dock-button" onClick={() => setCartOpen(true)}>
+            <ShoppingCart size={22} aria-hidden="true" />
+            <span className="cart-dock-label">Открыть корзину <small>{cartCount} шт.</small></span>
+            <strong>{cartTotal.toLocaleString('ru-RU')} сом</strong>
+          </button>
+        </div>
+      )}
 
       {cartOpen && (
         <div

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Utensils } from 'lucide-react';
+import { Search, Plus, Minus, Utensils } from 'lucide-react';
 
 export default function MenuPage({
   category,
@@ -9,6 +9,8 @@ export default function MenuPage({
   setSearch,
   filtered,
   addToCart,
+  removeFromCart,
+  cart,
   loading,
   error
 }) {
@@ -77,6 +79,7 @@ export default function MenuPage({
 
         <div className="dish-grid">
           {filtered.map(dish => {
+            const quantity = cart.find(item => item.id === dish.id)?.quantity || 0;
             const imageBroken = !dish.image || brokenImages.includes(dish.id);
 
             return (
@@ -101,8 +104,8 @@ export default function MenuPage({
 
                 <div className="dish-content">
                   <div className="dish-stock-badge">
-                    {dish.stock > 0
-                      ? `${dish.stock} порций за сегодня`
+                    {quantity > 0 ? `В корзине: ${quantity}` : dish.stock > 0
+                      ? `Осталось порций: ${dish.stock}`
                       : 'На сегодня закончилось'}
                   </div>
 
@@ -125,19 +128,20 @@ export default function MenuPage({
                       {dish.price} <small>сом</small>
                     </strong>
 
-                    <button
-                      type="button"
-                      onClick={() => addToCart(dish)}
-                      disabled={dish.stock === 0}
-                    >
-                      {dish.stock === 0 ? (
-                        'Закончилось'
-                      ) : (
-                        <>
-                          <Plus size={15} /> Добавить
-                        </>
-                      )}
-                    </button>
+                    {quantity > 0 ? (
+                      <div className="dish-quantity" role="group" aria-label={`Количество: ${dish.name}`}>
+                        <button type="button" onClick={() => removeFromCart(dish)}
+                          aria-label={`Убрать порцию: ${dish.name}`}><Minus size={18} /></button>
+                        <output aria-live="polite" aria-label={`В корзине: ${dish.name}`}>{quantity}</output>
+                        <button type="button" onClick={() => addToCart(dish)} disabled={dish.stock <= 0}
+                          aria-label={`Добавить порцию: ${dish.name}`}><Plus size={18} /></button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => addToCart(dish)} disabled={dish.stock <= 0}
+                        aria-label={`Добавить в корзину: ${dish.name}`}>
+                        {dish.stock <= 0 ? 'Закончилось' : <><Plus size={15} /> Добавить</>}
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>
