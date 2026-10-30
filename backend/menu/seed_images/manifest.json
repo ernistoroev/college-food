@@ -1,0 +1,142 @@
+[
+  {
+    "name": "Гречка с мясом",
+    "category": "Горячее",
+    "file": "grechka.jpg"
+  },
+  {
+    "name": "Котлета с пюре",
+    "category": "Горячее",
+    "file": "kotleta.jpg"
+  },
+  {
+    "name": "Курица с рисом",
+    "category": "Горячее",
+    "file": "kuriza.jpg"
+  },
+  {
+    "name": "Лагман",
+    "category": "Горячее",
+    "file": "lagman.jpg"
+  },
+  {
+    "name": "Манты",
+    "category": "Горячее",
+    "file": "manty.jpg"
+  },
+  {
+    "name": "Паста Болоньезе",
+    "category": "Горячее",
+    "file": "pasta.jpg"
+  },
+  {
+    "name": "Пельмени",
+    "category": "Горячее",
+    "file": "pelmeni.png"
+  },
+  {
+    "name": "Плов по-восточному",
+    "category": "Горячее",
+    "file": "plov.jpg"
+  },
+  {
+    "name": "Борщ",
+    "category": "Супы",
+    "file": "borsh.jpg"
+  },
+  {
+    "name": "Куриный суп",
+    "category": "Супы",
+    "file": "sup.jpg"
+  },
+  {
+    "name": "Суп с фрикадельками",
+    "category": "Супы",
+    "file": "суп.webp"
+  },
+  {
+    "name": "Чечевичный суп",
+    "category": "Супы",
+    "file": "чечевица.jpeg"
+  },
+  {
+    "name": "Винегрет",
+    "category": "Салаты",
+    "file": "винегрет.jpeg"
+  },
+  {
+    "name": "Греческий салат",
+    "category": "Салаты",
+    "file": "салат.jpg"
+  },
+  {
+    "name": "Овощной салат",
+    "category": "Салаты",
+    "file": "овощной_салат.jpg"
+  },
+  {
+    "name": "Цезарь с курицей",
+    "category": "Салаты",
+    "file": "salat.jpg"
+  },
+  {
+    "name": "Мини-пицца",
+    "category": "Выпечка",
+    "file": "пицца.jpeg"
+  },
+  {
+    "name": "Пирожок с картошкой",
+    "category": "Выпечка",
+    "file": "пирожок.jpg"
+  },
+  {
+    "name": "Самса с курицей",
+    "category": "Выпечка",
+    "file": "самса.jpeg"
+  },
+  {
+    "name": "Самса с мясом",
+    "category": "Выпечка",
+    "file": "samsa.jpg"
+  },
+  {
+    "name": "Сосиска в тесте",
+    "category": "Выпечка",
+    "file": "сосиска.jpg"
+  },
+  {
+    "name": "Айран",
+    "category": "Напитки",
+    "file": "айран.jpeg"
+  },
+  {
+    "name": "Вода",
+    "category": "Напитки",
+    "file": "легенда.jpeg"
+  },
+  {
+    "name": "Компот",
+    "category": "Напитки",
+    "file": "kompot.jpg"
+  },
+  {
+    "name": "Кофе",
+    "category": "Напитки",
+    "file": "кофе.webp"
+  },
+  {
+    "name": "Лимонад",
+    "category": "Напитки",
+    "file": "буратино.jpeg"
+  },
+  {
+    "name": "Сок",
+    "category": "Напитки",
+    "file": "сок_дада_тропический_.webp"
+  },
+  {
+    "name": "Чай",
+    "category": "Напитки",
+    "file": "tea.jpg"
+  }
+]
