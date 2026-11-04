@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .serializers import (
     LoginSerializer,
+    StaffLoginSerializer,
     ProfileUpdateSerializer,
     RegisterSerializer,
     TokensSerializer,
@@ -82,3 +83,15 @@ class MeView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserSerializer(user, context={'request': request}).data)
+
+
+class StaffLoginView(APIView):
+    authentication_classes = []
+
+    @extend_schema(tags=[TAG], summary='Отдельный вход сотрудника',
+                   request=StaffLoginSerializer, responses={200: TokensSerializer},
+                   description='Студент получает 403. Назначение роли — только владельцем через Django admin.')
+    def post(self, request):
+        serializer = StaffLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return tokens_response(serializer.validated_data['user'], request)

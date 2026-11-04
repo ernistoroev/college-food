@@ -6,7 +6,7 @@ STAFF_GROUP = 'Сотрудники столовой'
 
 def is_canteen_staff(user):
     """A superuser counts as staff too, so the project owner can manage everything."""
-    if not user or not user.is_authenticated:
+    if not user or not user.is_authenticated or not user.is_active:
         return False
     return user.is_superuser or user.groups.filter(name=STAFF_GROUP).exists()
 

@@ -79,7 +79,7 @@ class DishViewSet(viewsets.ModelViewSet):
         queryset = Dish.objects.select_related('category').annotate(
             rating=Avg('reviews__rating', filter=visible),
             reviews_count=Count('reviews', filter=visible),
-        )
+        ).order_by('category__order', 'category__name', 'name', 'id')
         params = self.request.query_params
 
         category = params.get('category')

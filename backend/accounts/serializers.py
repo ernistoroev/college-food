@@ -3,7 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from .models import Profile
-from .permissions import get_role
+from .permissions import get_role, is_canteen_staff
 
 User = get_user_model()
 
@@ -114,3 +114,12 @@ class ProfileUpdateSerializer(serializers.Serializer):
                 setattr(profile, field, validated_data[field])
         profile.save()
         return user
+
+
+class StaffLoginSerializer(LoginSerializer):
+    def validate(self, data):
+        data = super().validate(data)
+        if not is_canteen_staff(data['user']):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('Вход доступен только сотрудникам столовой.')
+        return data
