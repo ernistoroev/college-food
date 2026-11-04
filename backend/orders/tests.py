@@ -155,6 +155,92 @@ class StaffOrdersTests(OrdersTestCase):
         self.assertEqual(self.plov.portions_today, 5)
 
 
+class OrderWorkflowTests(OrdersTestCase):
+    """Status order, accepting and rejecting orders, status messages in the chat."""
+
+    def chat_texts(self, order):
+        return list(order.messages.values_list('text', flat=True))
+
+    def test_status_cannot_skip_steps_or_go_back(self):
+        order = self.make_order()
+        self.client.force_authenticate(self.staff)
+        response = self.client.patch(f'/api/orders/{order.id}/status/', {'status': 'done'})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('«Готовится», «Отменён»', response.json()['status'][0])
+
+        Order.objects.filter(id=order.id).update(status=Order.Status.READY)
+        self.assertEqual(self.client.patch(f'/api/orders/{order.id}/status/', {'status': 'new'}).status_code, 400)
+        self.assertEqual(self.client.patch(f'/api/orders/{order.id}/status/', {'status': 'ready'}).status_code, 400)
+
+    def test_status_change_writes_to_chat(self):
+        order = self.make_order()
+        self.client.force_authenticate(self.staff)
+        self.client.patch(f'/api/orders/{order.id}/status/', {'status': 'cooking'})
+        self.client.patch(f'/api/orders/{order.id}/status/', {'status': 'ready'})
+
+        self.client.force_authenticate(self.student)
+        chat = self.client.get(f'/api/orders/{order.id}/messages/').json()
+        self.assertEqual([m['text'] for m in chat], ['Статус заказа: Готовится.', 'Статус заказа: Готов.'])
+        self.assertEqual(chat[0]['author_role'], 'staff')
+
+    def test_staff_accepts_new_order(self):
+        order = self.make_order()
+        self.client.force_authenticate(self.staff)
+        response = self.client.post(f'/api/orders/{order.id}/accept/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'cooking')
+        self.assertEqual(self.chat_texts(order), ['Статус заказа: Готовится.'])
+        # Only a new order can be accepted.
+        self.assertEqual(self.client.post(f'/api/orders/{order.id}/accept/').status_code, 400)
+
+    def test_staff_rejects_order_with_reason(self):
+        order = self.make_order(quantity=3)
+        self.client.force_authenticate(self.staff)
+        response = self.client.post(f'/api/orders/{order.id}/reject/', {'reason': 'Плов закончился'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['status'], 'cancelled')
+        self.assertEqual(self.chat_texts(order), ['Статус заказа: Отменён. Причина: Плов закончился'])
+        self.plov.refresh_from_db()
+        self.assertEqual(self.plov.portions_today, 5)
+        # A cancelled order cannot be rejected again, and the portions are not given back twice.
+        self.assertEqual(self.client.post(f'/api/orders/{order.id}/reject/', {'reason': 'Ещё раз'}).status_code, 400)
+        self.plov.refresh_from_db()
+        self.assertEqual(self.plov.portions_today, 5)
+
+    def test_reject_needs_reason(self):
+        order = self.make_order()
+        self.client.force_authenticate(self.staff)
+        self.assertEqual(self.client.post(f'/api/orders/{order.id}/reject/', {'reason': ' '}).status_code, 400)
+        self.assertEqual(self.client.post(f'/api/orders/{order.id}/reject/').status_code, 400)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.NEW)
+
+    def test_student_cannot_accept_or_reject(self):
+        order = self.make_order()
+        self.assertEqual(self.client.post(f'/api/orders/{order.id}/accept/').status_code, 403)
+        self.assertEqual(self.client.post(f'/api/orders/{order.id}/reject/', {'reason': 'нет'}).status_code, 403)
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.post(f'/api/orders/{order.id}/accept/').status_code, 401)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.Status.NEW)
+
+    def test_admin_status_change_writes_to_chat_and_returns_portions(self):
+        order = self.make_order(quantity=2)
+        self.staff.is_staff = self.staff.is_superuser = True
+        self.staff.save()
+        self.client.force_login(self.staff)
+        response = self.client.post(f'/admin/orders/order/{order.id}/change/', {
+            'status': 'cancelled',
+            'items-TOTAL_FORMS': 1, 'items-INITIAL_FORMS': 1, 'items-0-id': order.items.get().id,
+            'items-0-order': order.id,
+            'messages-TOTAL_FORMS': 0, 'messages-INITIAL_FORMS': 0,
+        })
+        self.assertEqual(response.status_code, 302)
+        self.plov.refresh_from_db()
+        self.assertEqual(self.plov.portions_today, 5)
+        self.assertEqual(self.chat_texts(order), ['Статус заказа: Отменён.'])
+
+
 class OrderChatTests(OrdersTestCase):
     def test_student_and_staff_chat_about_order(self):
         order = self.make_order()

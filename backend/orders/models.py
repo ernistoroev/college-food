@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.validators import MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F
 
 from menu.models import Dish
@@ -19,6 +19,14 @@ class Order(models.Model):
 
     # After these statuses the order is closed and its status cannot be changed through the API.
     FINAL_STATUSES = {Status.DONE, Status.CANCELLED}
+    # Where the order may go from each status through the API: one step forward or cancel.
+    NEXT_STATUSES = {
+        Status.NEW: [Status.COOKING, Status.CANCELLED],
+        Status.COOKING: [Status.READY, Status.CANCELLED],
+        Status.READY: [Status.DONE, Status.CANCELLED],
+        Status.DONE: [],
+        Status.CANCELLED: [],
+    }
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -40,6 +48,22 @@ class Order(models.Model):
 
     def __str__(self):
         return f'Заказ №{self.pk}'
+
+    def set_status(self, status, by, reason=''):
+        """Moves the order to a new status; `by` is the staff member who did it."""
+        with transaction.atomic():
+            self.status = status
+            self.save(update_fields=['status'])
+            self.after_status_change(by, reason)
+
+    def after_status_change(self, by, reason=''):
+        """Gives the portions back on cancel and tells the student about the new status in the chat."""
+        if self.status == self.Status.CANCELLED:
+            self.return_portions()
+        text = f'Статус заказа: {self.get_status_display()}.'
+        if reason:
+            text += f' Причина: {reason}'
+        self.messages.create(author=by, text=text)
 
     def return_portions(self):
         """A cancelled order gives its portions back to the menu."""

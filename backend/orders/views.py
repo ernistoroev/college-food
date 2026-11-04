@@ -2,6 +2,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -11,6 +12,7 @@ from .models import Order
 from .serializers import (
     MessageSerializer,
     OrderCreateSerializer,
+    OrderRejectSerializer,
     OrderSerializer,
     OrderStatusSerializer,
     StaffOrderDetailSerializer,
@@ -37,7 +39,19 @@ TAG = 'Заказы'
     ),
     change_status=extend_schema(
         tags=[TAG], summary='Сменить статус', request=OrderStatusSerializer, responses=StaffOrderDetailSerializer,
-        description='Только сотрудник. «Выдан» и «Отменён» — финальные; при отмене порции возвращаются в меню.',
+        description='Только сотрудник. Порядок: «Новый» → «Готовится» → «Готов» → «Выдан»; отменить можно на любом '
+                    'шаге до выдачи, другие переходы — 400. «Выдан» и «Отменён» — финальные; при отмене порции '
+                    'возвращаются в меню. О новом статусе студенту приходит сообщение в чат (с `reason`, если указана).',
+    ),
+    accept=extend_schema(
+        tags=[TAG], summary='Принять заказ', request=None, responses=StaffOrderDetailSerializer,
+        description='Только сотрудник. «Новый» → «Готовится», студенту приходит сообщение в чат. '
+                    'Заказ в другом статусе — 400.',
+    ),
+    reject=extend_schema(
+        tags=[TAG], summary='Отклонить заказ', request=OrderRejectSerializer, responses=StaffOrderDetailSerializer,
+        description='Только сотрудник. Заказ отменяется, порции возвращаются в меню, причина приходит студенту '
+                    'в чат. Выданный или уже отменённый заказ — 400.',
     ),
 )
 
@@ -46,7 +60,9 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
     GET   /api/orders/                — a student sees own orders, staff see all; filter ?status=new;
     POST  /api/orders/                — a student places an order {student_name, pickup_time, comment?, items};
     GET   /api/orders/{id}/           — one order (for staff with the student's contacts);
-    PATCH /api/orders/{id}/status/    — staff change the status {status};
+    PATCH /api/orders/{id}/status/    — staff change the status {status, reason?};
+    POST  /api/orders/{id}/accept/    — staff accept a new order (→ «Готовится»);
+    POST  /api/orders/{id}/reject/    — staff reject the order {reason} (→ «Отменён»);
     GET   /api/orders/{id}/messages/  — chat about the order; POST {text} — send a message.
     """
 
@@ -73,7 +89,7 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
     def get_permissions(self):
         if self.action == 'create':
             return [IsStudent()]
-        if self.action == 'change_status':
+        if self.action in ('change_status', 'accept', 'reject'):
             return [IsCanteenStaff()]
         return super().get_permissions()
 
@@ -85,8 +101,23 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
 
     @action(detail=True, methods=['patch'], url_path='status', serializer_class=OrderStatusSerializer)
     def change_status(self, request, pk=None):
+        return self.update_order(OrderStatusSerializer, request.data)
+
+    @action(detail=True, methods=['post'])
+    def accept(self, request, pk=None):
         order = self.get_object()
-        serializer = OrderStatusSerializer(order, data=request.data)
+        if order.status != Order.Status.NEW:
+            raise ValidationError(f'Принять можно только новый заказ, а этот — «{order.get_status_display()}».')
+        order.set_status(Order.Status.COOKING, by=request.user)
+        return Response(StaffOrderDetailSerializer(order).data)
+
+    @action(detail=True, methods=['post'], serializer_class=OrderRejectSerializer)
+    def reject(self, request, pk=None):
+        return self.update_order(OrderRejectSerializer, request.data)
+
+    def update_order(self, serializer_class, data):
+        order = self.get_object()
+        serializer = serializer_class(order, data=data, context={'request': self.request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(StaffOrderDetailSerializer(order).data)
