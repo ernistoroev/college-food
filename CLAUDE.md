@@ -72,8 +72,10 @@ SQLite (`backend/db.sqlite3`).
 - `accounts`: стандартный `User` (почта = `username`, имя = `first_name`) + `Profile` (курс, факультет, аватар).
 - `orders`: `Order` (пользователь, имя студента, время получения из `PICKUP_TIMES`, комментарий, статус
   `new`/`cooking`/`ready`/`done`/`cancelled`, сумма), `OrderItem` (блюдо, копия названия и цены, количество),
-  `Message` (заказ, автор, текст). `done` и `cancelled` — финальные (`FINAL_STATUSES`); при отмене
-  `Order.return_portions()` возвращает порции — и через API, и в админке (`OrderAdmin.save_model`).
+  `Message` (заказ, автор, текст). `done` и `cancelled` — финальные (`FINAL_STATUSES`); переходы через API —
+  `NEXT_STATUSES` (на шаг вперёд или отмена). Статус меняет `Order.set_status()`: при отмене
+  `return_portions()` возвращает порции, а студенту в чат пишется «Статус заказа: …» (с причиной, если есть).
+  В админке то же делает `OrderAdmin.save_model` через `after_status_change()`, но без проверки переходов.
 - `reviews`: `Review` (пользователь, `dish` — необязательно: пусто = отзыв о столовой, оценка 1–5, текст,
   `is_visible`). `UniqueConstraint`: один отзыв на блюдо от пользователя (отзывы о столовой не ограничены).
 
@@ -86,8 +88,9 @@ SQLite (`backend/db.sqlite3`).
 - меню: `ModelViewSet` для `/api/dishes/` и `/api/categories/`; фильтры `?category=`, `?search=`, `?available=`;
   `PATCH /api/dishes/{id}/availability/`; `GET /api/dishes/{id}/reviews/`; в блюде `rating` и `reviews_count`
   (по видимым отзывам, `annotate`); недоступные блюда тоже в списке (`is_available=false`), но заказать их нельзя;
-- заказы: `/api/orders/` (студент — свои, сотрудник — все, `?status=`), `PATCH /api/orders/{id}/status/`,
-  `GET`/`POST /api/orders/{id}/messages/`; контакты студента (`customer_name`, `customer_email`) — только в
+- заказы: `/api/orders/` (студент — свои, сотрудник — все, `?status=`), `PATCH /api/orders/{id}/status/`
+  `{status, reason?}`, `POST /api/orders/{id}/accept/` (новый → готовится), `POST /api/orders/{id}/reject/`
+  `{reason}` (→ отменён), `GET`/`POST /api/orders/{id}/messages/`; контакты студента (`customer_name`, `customer_email`) — только в
   карточке заказа для сотрудника. Сумму и остаток порций считает сервер в одной транзакции (`select_for_update`);
 - отзывы: `/api/reviews/` (`?dish=<id>` / `?dish=none`); скрытые видит только сотрудник;
 - `GET /api/staff/dashboard/` — сводка для панели сотрудника.

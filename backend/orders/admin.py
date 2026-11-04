@@ -28,8 +28,9 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline, MessageInline]
 
     def save_model(self, request, obj, form, change):
-        # Cancelling in the admin gives the portions back too, the same as through the API.
-        was_cancelled = change and Order.objects.filter(pk=obj.pk, status=Order.Status.CANCELLED).exists()
+        # A status change in the admin works the same as through the API:
+        # cancelling gives the portions back, and the student gets a message in the chat.
+        old_status = Order.objects.filter(pk=obj.pk).values_list('status', flat=True).first() if change else None
         super().save_model(request, obj, form, change)
-        if obj.status == Order.Status.CANCELLED and not was_cancelled:
-            obj.return_portions()
+        if change and obj.status != old_status:
+            obj.after_status_change(by=request.user)
