@@ -96,25 +96,54 @@ class OrderCreateSerializer(serializers.Serializer):
         return order
 
 
+def check_order_is_open(order):
+    if order.status in Order.FINAL_STATUSES:
+        raise serializers.ValidationError(
+            f'Заказ уже в статусе «{order.get_status_display()}», его нельзя изменить.'
+        )
+
+
 class OrderStatusSerializer(serializers.Serializer):
-    """PATCH /api/orders/{id}/status/ {status} — staff move the order along."""
+    """PATCH /api/orders/{id}/status/ {status, reason?} — staff move the order one step along or cancel it."""
 
     status = serializers.ChoiceField(choices=Order.Status.choices)
+    reason = serializers.CharField(max_length=300, required=False, allow_blank=True)
 
     def validate(self, data):
         order = self.instance
-        if order.status in Order.FINAL_STATUSES:
+        check_order_is_open(order)
+        allowed = Order.NEXT_STATUSES[order.status]
+        if data['status'] not in allowed:
+            names = ', '.join(f'«{Order.Status(status).label}»' for status in allowed)
             raise serializers.ValidationError(
-                f'Заказ уже в статусе «{order.get_status_display()}», его нельзя изменить.'
+                {'status': f'Из статуса «{order.get_status_display()}» можно перевести только в: {names}.'}
             )
         return data
 
     def update(self, order, validated_data):
-        with transaction.atomic():
-            order.status = validated_data['status']
-            order.save(update_fields=['status'])
-            if order.status == Order.Status.CANCELLED:
-                order.return_portions()
+        order.set_status(
+            validated_data['status'], by=self.context['request'].user, reason=validated_data.get('reason', '').strip()
+        )
+        return order
+
+
+class OrderRejectSerializer(serializers.Serializer):
+    """POST /api/orders/{id}/reject/ {reason} — staff turn the order down; the student sees the reason in the chat."""
+
+    reason = serializers.CharField(max_length=300)
+
+    def validate_reason(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Напиши причину, её увидит студент.')
+        return value
+
+    def validate(self, data):
+        check_order_is_open(self.instance)
+        return data
+
+    def update(self, order, validated_data):
+        order.set_status(Order.Status.CANCELLED, by=self.context['request'].user, reason=validated_data['reason'])
         return order
 
 
