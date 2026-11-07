@@ -19,12 +19,12 @@ class MessageInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'student_name', 'pickup_time', 'total', 'status', 'created_at']
+    list_display = ['id', 'student_name', 'canteen', 'pickup_time', 'total', 'status', 'created_at']
     # Staff change the status right in the list: «Новый» → «Готовится» → «Готов» → «Выдан».
     list_editable = ['status']
-    list_filter = ['status', 'pickup_time', 'created_at']
+    list_filter = ['status', 'canteen', 'pickup_time', 'created_at']
     search_fields = ['student_name', 'user__username']
-    readonly_fields = ['user', 'student_name', 'pickup_time', 'comment', 'total', 'created_at']
+    readonly_fields = ['user', 'student_name', 'canteen', 'pickup_time', 'comment', 'total', 'created_at']
     inlines = [OrderItemInline, MessageInline]
 
     def save_model(self, request, obj, form, change):

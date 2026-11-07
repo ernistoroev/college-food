@@ -3,11 +3,10 @@ from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.db.models import F
 
-from menu.models import Dish
+from menu.models import Canteen, Dish
 
 # Pickup slots offered on the checkout form.
 PICKUP_TIMES = [(time, time) for time in ['12:20', '12:40', '13:00', '13:20', '13:40', '14:00']]
-
 
 class Order(models.Model):
     class Status(models.TextChoices):
@@ -35,6 +34,8 @@ class Order(models.Model):
         verbose_name='пользователь',
     )
     student_name = models.CharField('имя студента', max_length=80)
+    # Where the student collects the order; every dish in it must be served there.
+    canteen = models.ForeignKey(Canteen, on_delete=models.PROTECT, related_name='orders', verbose_name='столовая')
     pickup_time = models.CharField('время получения', max_length=5, choices=PICKUP_TIMES)
     comment = models.TextField('комментарий', max_length=500, blank=True)
     status = models.CharField('статус', max_length=20, choices=Status.choices, default=Status.NEW)

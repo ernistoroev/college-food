@@ -4,20 +4,27 @@ import { useState } from 'react';
 export default function CheckoutForm({
   cart,
   cartTotal,
+  canteens,
   onSubmit,
   onCancel,
   currentUser
 }) {
   const [studentName, setStudentName] = useState(currentUser?.name || '');
+  const [chosenCanteen, setChosenCanteen] = useState(null);
   const [pickupTime, setPickupTime] = useState('12:20');
+
+  // Only the canteens that serve every dish in the cart.
+  const available = canteens.filter(item => cart.every(dish => dish.canteens?.includes(item.id)));
+  const canteen = available.some(item => item.id === chosenCanteen) ? chosenCanteen : available[0]?.id;
 
   function handleSubmit(event) {
     event.preventDefault();
 
-    if (!studentName.trim()) return;
+    if (!studentName.trim() || !canteen) return;
 
     onSubmit({
       studentName: studentName.trim(),
+      canteen,
       pickupTime,
       items: cart.map(item => ({
         id: item.id,
@@ -32,7 +39,7 @@ export default function CheckoutForm({
   return (
     <form className="checkout-form" onSubmit={handleSubmit}>
       <h2>Оформление заказа</h2>
-      <p>Укажи имя и удобное время получения.</p>
+      <p>Укажи имя, столовую и удобное время получения.</p>
 
       <label>
         Имя студента
@@ -44,6 +51,24 @@ export default function CheckoutForm({
           required
           maxLength={80}
         />
+      </label>
+
+      <label>
+        Где забрать
+        {available.length > 0 ? (
+          <select
+            value={canteen}
+            onChange={event => setChosenCanteen(Number(event.target.value))}
+          >
+            {available.map(item => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </select>
+        ) : (
+          <span className="checkout-form-warning">
+            Нет столовой, где есть все блюда из корзины. Оформи их отдельными заказами.
+          </span>
+        )}
       </label>
 
       <label>
@@ -66,7 +91,7 @@ export default function CheckoutForm({
         <strong>{cartTotal} сом</strong>
       </div>
 
-      <button type="submit" className="checkout-button">
+      <button type="submit" className="checkout-button" disabled={!canteen}>
         Подтвердить заказ
       </button>
 

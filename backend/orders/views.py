@@ -24,8 +24,12 @@ TAG = 'Заказы'
 @extend_schema_view(
     list=extend_schema(
         tags=[TAG], summary='Заказы', description='Студент видит свои заказы, сотрудник — все. Новые сначала.',
-        parameters=[OpenApiParameter('status', OpenApiTypes.STR, enum=Order.Status.values,
-                                     description='Только заказы в этом статусе.')],
+        parameters=[
+            OpenApiParameter('status', OpenApiTypes.STR, enum=Order.Status.values,
+                             description='Только заказы в этом статусе.'),
+            OpenApiParameter('canteen', OpenApiTypes.INT,
+                             description='Только заказы в эту столовую (id из /api/canteens/).'),
+        ],
     ),
     retrieve=extend_schema(
         tags=[TAG], summary='Один заказ', responses=StaffOrderDetailSerializer,
@@ -34,8 +38,8 @@ TAG = 'Заказы'
     ),
     create=extend_schema(
         tags=[TAG], summary='Оформить заказ', request=OrderCreateSerializer, responses={201: OrderSerializer},
-        description='Только студент. Сумму считает сервер по ценам из базы; если порций не хватает — 400 '
-                    'и ничего не списывается.',
+        description='Только студент. Сумму считает сервер по ценам из базы. Если порций не хватает или блюда нет '
+                    'в выбранной столовой (`canteen`) — 400 и ничего не списывается.',
     ),
     change_status=extend_schema(
         tags=[TAG], summary='Сменить статус', request=OrderStatusSerializer, responses=StaffOrderDetailSerializer,
@@ -57,8 +61,8 @@ TAG = 'Заказы'
 
 class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
-    GET   /api/orders/                — a student sees own orders, staff see all; filter ?status=new;
-    POST  /api/orders/                — a student places an order {student_name, pickup_time, comment?, items};
+    GET   /api/orders/                — a student sees own orders, staff see all; filters ?status=new, ?canteen=<id>;
+    POST  /api/orders/                — a student places an order {student_name, canteen, pickup_time, comment?, items};
     GET   /api/orders/{id}/           — one order (for staff with the student's contacts);
     PATCH /api/orders/{id}/status/    — staff change the status {status, reason?};
     POST  /api/orders/{id}/accept/    — staff accept a new order (→ «Готовится»);
@@ -69,7 +73,7 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Order.objects.select_related('user').prefetch_related('items')
+        queryset = Order.objects.select_related('user', 'canteen').prefetch_related('items')
         if getattr(self, 'swagger_fake_view', False):  # the API documentation is being built
             return queryset
         # A student sees only own orders; for someone else's order the answer is 404.
@@ -79,6 +83,9 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
         status_filter = self.request.query_params.get('status')
         if status_filter in Order.Status.values:
             queryset = queryset.filter(status=status_filter)
+        canteen = self.request.query_params.get('canteen')
+        if canteen and canteen.isdigit():
+            queryset = queryset.filter(canteen_id=canteen)
         return queryset
 
     def get_serializer_class(self):

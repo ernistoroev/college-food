@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.files import File
 from django.core.management.base import BaseCommand
-from menu.models import Category, Dish
+from menu.models import Canteen, Category, Dish
 
 # Photos that already exist in frontend/public/images/ (the other dishes have no photo yet).
 IMAGES = {
@@ -104,6 +104,8 @@ class Command(BaseCommand):
             )
 
             if created:
+                # A new dish is served in all canteens; staff narrow it down in the admin.
+                dish.canteens.set(Canteen.objects.all())
                 created_count += 1
             else:
                 updated_count += 1

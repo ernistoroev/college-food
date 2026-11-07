@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group
 from rest_framework.test import APITestCase
 
 from accounts.permissions import STAFF_GROUP
-from menu.models import Category, Dish
+from menu.models import Canteen, Category, Dish
 from orders.models import Order
 from reviews.models import Review
 
@@ -23,8 +23,9 @@ class DashboardTests(APITestCase):
         self.staff = User.objects.create_user(username='cook@college.kg', password='x')
         self.staff.groups.add(Group.objects.get(name=STAFF_GROUP))
 
+        canteen = Canteen.objects.get(floor=1)
         for status in ['new', 'new', 'cooking', 'done']:
-            Order.objects.create(user=self.student, student_name='Айбек', pickup_time='12:20',
+            Order.objects.create(user=self.student, student_name='Айбек', canteen=canteen, pickup_time='12:20',
                                  total=Decimal('230'), status=status)
         for number in range(7):
             Review.objects.create(user=self.student, rating=5, text=f'Отзыв {number}', is_visible=number != 6)

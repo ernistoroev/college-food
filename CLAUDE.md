@@ -70,7 +70,11 @@ SQLite (`backend/db.sqlite3`).
   единица `г`/`мл`, `portions_today`, фото в `media/dishes/`, `is_available`, служебное `search_name` — название
   в нижнем регистре, заполняется в `save()`). Категорию с блюдами удалить нельзя (`PROTECT`, API отвечает 400).
 - `accounts`: стандартный `User` (почта = `username`, имя = `first_name`) + `Profile` (курс, факультет, аватар).
-- `orders`: `Order` (пользователь, имя студента, время получения из `PICKUP_TIMES`, комментарий, статус
+- `menu`: `Canteen` (этаж, название) — столовые на 1, 5 и 6 этажах, создаются миграцией `menu/0005`;
+  `Dish.canteens` — где подают блюдо (меню одно, порции общие). Новое блюдо без столовых — во всех
+  (API, `import_dishes`, в админке галочки по умолчанию стоят все).
+- `orders`: `Order` (пользователь, имя студента, столовая `canteen` — все блюда заказа должны быть в ней,
+  время получения из `PICKUP_TIMES`, комментарий, статус
   `new`/`cooking`/`ready`/`done`/`cancelled`, сумма), `OrderItem` (блюдо, копия названия и цены, количество),
   `Message` (заказ, автор, текст). `done` и `cancelled` — финальные (`FINAL_STATUSES`); переходы через API —
   `NEXT_STATUSES` (на шаг вперёд или отмена). Статус меняет `Order.set_status()`: при отмене
@@ -88,7 +92,11 @@ SQLite (`backend/db.sqlite3`).
 - меню: `ModelViewSet` для `/api/dishes/` и `/api/categories/`; фильтры `?category=`, `?search=`, `?available=`;
   `PATCH /api/dishes/{id}/availability/`; `GET /api/dishes/{id}/reviews/`; в блюде `rating` и `reviews_count`
   (по видимым отзывам, `annotate`); недоступные блюда тоже в списке (`is_available=false`), но заказать их нельзя;
-- заказы: `/api/orders/` (студент — свои, сотрудник — все, `?status=`), `PATCH /api/orders/{id}/status/`
+- столовые: `GET /api/canteens/` (без страниц, меняются только в админке); у блюда `canteens` (id) и
+  `canteen_names`, фильтр `/api/dishes/?canteen=<id>`;
+- заказы: `/api/orders/` (студент — свои, сотрудник — все, `?status=`, `?canteen=<id>`; при оформлении
+  `canteen` обязательна, блюдо не из этой столовой — 400; в ответе `canteen` и `canteen_name`),
+  `PATCH /api/orders/{id}/status/`
   `{status, reason?}`, `POST /api/orders/{id}/accept/` (новый → готовится), `POST /api/orders/{id}/reject/`
   `{reason}` (→ отменён), `GET`/`POST /api/orders/{id}/messages/`; контакты студента (`customer_name`, `customer_email`) — только в
   карточке заказа для сотрудника. Сумму и остаток порций считает сервер в одной транзакции (`select_for_update`);
@@ -151,6 +159,9 @@ JWT: `access` и `refresh` хранятся в `localStorage` (`college-food-acc
 Меню, заказы, отзывы и профиль — с сервера; модули в `src/entities/*` переводят поля API (`portions_today`,
 `status_display`, `dish_name`, `user_name`, …) в имена, которые использует разметка (`stock`, `status`, `name`, …).
 Недоступное блюдо (`is_available=false`) приходит со `stock: 0` — карточка показывает «закончилось».
+На карточке блюда — этажи, где оно есть; в форме заказа «Где забрать» — только столовые, где есть все блюда
+корзины (`/api/canteens/` грузится вместе с меню). Иконка сайта — логотип колледжа (`public/favicon.png`,
+`favicon.ico`, `apple-touch-icon.png`).
 Страница «Отзывы» показывает отзывы о столовой (`?dish=none`). Интерфейса сотрудника во фронтенде пока нет —
 сотрудник работает в Django-админке; `user.role` для будущей панели уже приходит.
 Корзина живёт только в памяти; при добавлении `stock` уменьшается на экране, настоящий остаток считает сервер,
