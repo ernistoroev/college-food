@@ -1,9 +1,10 @@
-import { getList } from '../../../shared/api/client.js';
+import { api, getList } from '../../../shared/api/client.js';
 
 export const ALL_CATEGORIES = 'Всё меню';
 
 // The API speaks Django field names; the cards use the names the frontend already had.
-function toDish(dish) {
+// floors: canteen id → floor, to show where the dish is served.
+function toDish(dish, floors) {
   return {
     id: dish.id,
     name: dish.name,
@@ -15,17 +16,23 @@ function toDish(dish) {
     weight: dish.weight ? `${dish.weight} ${dish.weight_unit}` : '',
     rating: dish.rating ? dish.rating.toFixed(1).replace('.', ',') : null,
     description: dish.description,
+    // Ids of the canteens that serve the dish: the order can be collected only there.
+    canteens: dish.canteens,
+    floors: dish.canteens.map(id => floors[id]).filter(Boolean).join(', '),
   };
 }
 
 export async function fetchMenu() {
-  const [dishes, categories] = await Promise.all([
+  const [dishes, categories, canteens] = await Promise.all([
     getList('/dishes/'),
     getList('/categories/'),
+    api.get('/canteens/').then(response => response.data),
   ]);
+  const floors = Object.fromEntries(canteens.map(canteen => [canteen.id, canteen.floor]));
 
   return {
-    dishes: dishes.map(toDish),
+    dishes: dishes.map(dish => toDish(dish, floors)),
     categories: [ALL_CATEGORIES, ...categories.map(category => category.name)],
+    canteens,
   };
 }

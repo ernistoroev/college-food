@@ -13,7 +13,7 @@ from rest_framework.test import APITestCase
 
 from accounts.permissions import STAFF_GROUP
 
-from .models import Category, Dish
+from .models import Canteen, Category, Dish
 
 User = get_user_model()
 
@@ -108,9 +108,29 @@ class MenuApiTests(APITestCase):
             'image': None,
             'category': self.hot.id,
             'category_name': 'Горячее',
+            'canteens': [],
+            'canteen_names': [],
             'rating': None,
             'reviews_count': 0,
         })
+
+    def test_canteens_list(self):
+        # The canteens are created by the migration.
+        response = self.client.get('/api/canteens/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([(c['floor'], c['name']) for c in response.json()],
+                         [(1, 'Столовая, 1 этаж'), (5, 'Столовая, 5 этаж'), (6, 'Столовая, 6 этаж')])
+
+    def test_dish_shows_and_filters_by_canteens(self):
+        first, fifth, sixth = Canteen.objects.order_by('floor')
+        self.plov.canteens.set([fifth, sixth])
+        self.tea.canteens.set([first])
+
+        dish = self.client.get(f'/api/dishes/{self.plov.id}/').json()
+        self.assertEqual(dish['canteens'], [fifth.id, sixth.id])
+        self.assertEqual(dish['canteen_names'], ['Столовая, 5 этаж', 'Столовая, 6 этаж'])
+        self.assertEqual(self.names(canteen=sixth.id), ['Плов'])
+        self.assertEqual(self.names(canteen=first.id), ['Чай'])
 
     def test_dish_weight_and_portions_today(self):
         self.plov.weight = 350
@@ -193,6 +213,19 @@ class MenuPermissionsTests(APITestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()['category_name'], 'Горячее')
         self.assertTrue(Dish.objects.filter(name='Борщ').exists())
+        # Without canteens a new dish is served in all of them.
+        self.assertEqual(len(response.json()['canteens']), 3)
+
+    def test_staff_sets_dish_canteens(self):
+        self.client.force_authenticate(self.staff)
+        first = Canteen.objects.get(floor=1)
+        response = self.client.post('/api/dishes/', {**self.new_dish, 'canteens': [first.id]})
+        self.assertEqual(response.json()['canteen_names'], ['Столовая, 1 этаж'])
+
+        response = self.client.patch(f'/api/dishes/{self.plov.id}/', {'canteens': []}, format='json')
+        self.assertEqual(response.status_code, 400)
+        response = self.client.patch(f'/api/dishes/{self.plov.id}/', {'canteens': [first.id]}, format='json')
+        self.assertEqual(response.json()['canteens'], [first.id])
 
     def test_staff_updates_and_deletes_dish(self):
         self.client.force_authenticate(self.staff)

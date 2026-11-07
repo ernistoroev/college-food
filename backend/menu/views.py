@@ -9,11 +9,24 @@ from rest_framework.response import Response
 from accounts.permissions import IsCanteenStaff, IsStaffOrReadOnly
 from reviews.serializers import ReviewSerializer
 
-from .models import Category, Dish
-from .serializers import CategorySerializer, DishAvailabilitySerializer, DishSerializer
+from .models import Canteen, Category, Dish
+from .serializers import CanteenSerializer, CategorySerializer, DishAvailabilitySerializer, DishSerializer
 
 TAG = 'Меню'
 STAFF_ONLY = ' Только сотрудник столовой.'
+
+
+@extend_schema_view(
+    list=extend_schema(tags=[TAG], summary='Столовые',
+                       description='Столовые колледжа по этажам. Меняются только в Django-админке.'),
+    retrieve=extend_schema(tags=[TAG], summary='Одна столовая'),
+)
+class CanteenViewSet(viewsets.ReadOnlyModelViewSet):
+    """GET /api/canteens/ — the college canteens; everyone can read, staff change them in the admin."""
+
+    queryset = Canteen.objects.all()
+    serializer_class = CanteenSerializer
+    pagination_class = None
 
 
 @extend_schema_view(
@@ -45,6 +58,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 DISH_FILTERS = [
     OpenApiParameter('category', OpenApiTypes.INT, description='Только блюда этой категории (id).'),
+    OpenApiParameter('canteen', OpenApiTypes.INT, description='Только блюда, которые есть в этой столовой (id).'),
     OpenApiParameter('search', OpenApiTypes.STR, description='Часть названия, регистр не важен.'),
     OpenApiParameter('available', OpenApiTypes.BOOL,
                      description='`false` — только недоступные (для сотрудника), `true` — только доступные.'),
@@ -67,7 +81,7 @@ class DishViewSet(viewsets.ModelViewSet):
     """
     Dishes: everyone can read, only canteen staff can create, change and delete.
     Unavailable dishes are listed too, with is_available=false.
-    Filters: ?category=<id>, ?search=<part of the name>, ?available=true|false.
+    Filters: ?category=<id>, ?canteen=<id>, ?search=<part of the name>, ?available=true|false.
     """
 
     serializer_class = DishSerializer
@@ -76,7 +90,7 @@ class DishViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # The average rating and the number of reviews count only visible reviews.
         visible = Q(reviews__is_visible=True)
-        queryset = Dish.objects.select_related('category').annotate(
+        queryset = Dish.objects.select_related('category').prefetch_related('canteens').annotate(
             rating=Avg('reviews__rating', filter=visible),
             reviews_count=Count('reviews', filter=visible),
         ).order_by('category__order', 'category__name', 'name', 'id')
@@ -85,6 +99,10 @@ class DishViewSet(viewsets.ModelViewSet):
         category = params.get('category')
         if category and category.isdigit():
             queryset = queryset.filter(category_id=category)
+
+        canteen = params.get('canteen')
+        if canteen and canteen.isdigit():
+            queryset = queryset.filter(canteens=canteen)
 
         search = params.get('search', '').strip()
         if search:

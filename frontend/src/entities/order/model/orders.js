@@ -5,6 +5,7 @@ function toOrder(order) {
   return {
     id: order.id,
     studentName: order.student_name,
+    canteen: order.canteen_name,
     pickupTime: order.pickup_time,
     status: order.status_display,
     total: order.total,
@@ -24,9 +25,10 @@ export async function fetchOrders() {
 }
 
 // The server checks the portions and counts the total itself, so only ids and quantities are sent.
-export async function createOrder({ studentName, pickupTime, items }) {
+export async function createOrder({ studentName, canteen, pickupTime, items }) {
   const response = await api.post('/orders/', {
     student_name: studentName,
+    canteen,
     pickup_time: pickupTime,
     items: items.map(item => ({ dish: item.id, quantity: item.quantity })),
   });

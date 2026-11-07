@@ -38,6 +38,7 @@ export default function App() {
   const [category, setCategory] = useState(ALL_CATEGORIES);
   const [menuDishes, setMenuDishes] = useState([]);
   const [categories, setCategories] = useState([ALL_CATEGORIES]);
+  const [canteens, setCanteens] = useState([]);
   const [menuLoading, setMenuLoading] = useState(true);
   const [menuError, setMenuError] = useState('');
   const [search, setSearch] = useState('');
@@ -70,6 +71,7 @@ export default function App() {
       .then(menu => {
         setMenuDishes(menu.dishes);
         setCategories(menu.categories);
+        setCanteens(menu.canteens);
         setMenuError('');
       })
       .catch(error => setMenuError(getErrorMessage(error)))
@@ -498,7 +500,7 @@ export default function App() {
                       }}
                     >
                       <Package size={15} />
-                      Получение: {order.pickupTime}
+                      Получение: {order.canteen}, {order.pickupTime}
                     </div>
 
                     <div
@@ -811,6 +813,7 @@ export default function App() {
             <CheckoutForm
               cart={cart}
               cartTotal={cartTotal}
+              canteens={canteens}
               currentUser={currentUser}
               onSubmit={handleCheckout}
               onCancel={() => setCheckoutOpen(false)}

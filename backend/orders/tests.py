@@ -5,7 +5,7 @@ from django.contrib.auth.models import Group
 from rest_framework.test import APITestCase
 
 from accounts.permissions import STAFF_GROUP
-from menu.models import Category, Dish
+from menu.models import Canteen, Category, Dish
 
 from .models import Message, Order
 
@@ -20,6 +20,12 @@ class OrdersTestCase(APITestCase):
         self.hidden = Dish.objects.create(
             category=hot, name='Борщ', price=Decimal('150'), portions_today=10, is_available=False
         )
+        # The canteens are created by the menu migration: 1st, 5th and 6th floor.
+        self.first, self.fifth, self.sixth = Canteen.objects.order_by('floor')
+        for dish in (self.plov, self.manty, self.hidden):
+            dish.canteens.set([self.first, self.fifth, self.sixth])
+        self.spaghetti = Dish.objects.create(category=hot, name='Спагетти', price=Decimal('200'), portions_today=5)
+        self.spaghetti.canteens.set([self.first])
         self.student = User.objects.create_user(
             username='aibek@college.kg', email='aibek@college.kg', password='x', first_name='Айбек'
         )
@@ -29,11 +35,8 @@ class OrdersTestCase(APITestCase):
         self.client.force_authenticate(self.student)
 
     def order(self, items, pickup_time='12:20', **extra):
-        return self.client.post(
-            '/api/orders/',
-            {'student_name': 'Айбек', 'pickup_time': pickup_time, 'items': items, **extra},
-            format='json',
-        )
+        data = {'student_name': 'Айбек', 'canteen': self.fifth.id, 'pickup_time': pickup_time, 'items': items, **extra}
+        return self.client.post('/api/orders/', {k: v for k, v in data.items() if v is not None}, format='json')
 
     def make_order(self, user=None, quantity=1):
         self.client.force_authenticate(user or self.student)
@@ -80,6 +83,27 @@ class StudentOrdersTests(OrdersTestCase):
     def test_empty_order(self):
         self.assertEqual(self.order([]).status_code, 400)
 
+    def test_order_remembers_canteen(self):
+        data = self.order([{'dish': self.plov.id, 'quantity': 1}], canteen=self.sixth.id).json()
+        self.assertEqual((data['canteen'], data['canteen_name']), (self.sixth.id, 'Столовая, 6 этаж'))
+
+    def test_canteen_is_required_and_checked(self):
+        for canteen in [None, 999, '']:
+            with self.subTest(canteen=canteen):
+                self.assertEqual(self.order([{'dish': self.plov.id, 'quantity': 1}], canteen=canteen).status_code, 400)
+        self.assertEqual(Order.objects.count(), 0)
+
+    def test_dish_only_in_its_canteens(self):
+        # Spaghetti is served only on the 1st floor: it cannot be collected on the 5th.
+        items = [{'dish': self.plov.id, 'quantity': 1}, {'dish': self.spaghetti.id, 'quantity': 1}]
+        response = self.order(items)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['items'], ['«Спагетти» нет в столовой на 5 этаже.'])
+        self.plov.refresh_from_db()
+        self.assertEqual(self.plov.portions_today, 5)
+
+        self.assertEqual(self.order(items, canteen=self.first.id).status_code, 201)
+
     def test_student_sees_only_own_orders(self):
         mine = self.make_order()
         self.make_order(user=self.other)
@@ -118,6 +142,17 @@ class StaffOrdersTests(OrdersTestCase):
         self.assertEqual(self.client.get('/api/orders/').json()['count'], 2)
         new_orders = self.client.get('/api/orders/', {'status': 'new'}).json()['results']
         self.assertEqual([o['id'] for o in new_orders], [first.id])
+
+    def test_staff_filters_orders_by_canteen(self):
+        first = self.make_order()
+        second = self.make_order(user=self.other)
+        Order.objects.filter(id=second.id).update(canteen=self.first)
+
+        self.client.force_authenticate(self.staff)
+        fifth_floor = self.client.get('/api/orders/', {'canteen': self.fifth.id}).json()['results']
+        self.assertEqual([o['id'] for o in fifth_floor], [first.id])
+        both = self.client.get('/api/orders/', {'canteen': self.first.id, 'status': 'new'}).json()['results']
+        self.assertEqual([o['id'] for o in both], [second.id])
 
     def test_staff_gets_contacts_only_in_order_detail(self):
         order = self.make_order()

@@ -113,6 +113,12 @@ export default function MenuPage({
 
                   <div className="dish-meta">
                     <span>{dish.weight}</span>
+                    {dish.floors && (
+                      <>
+                        <span className="meta-dot">·</span>
+                        <span>{dish.floors} этаж</span>
+                      </>
+                    )}
                     {dish.rating && (
                       <>
                         <span className="meta-dot">·</span>

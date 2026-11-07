@@ -22,6 +22,21 @@ class Category(models.Model):
         return self.name
 
 
+class Canteen(models.Model):
+    """A college canteen. The menu is one, but each dish is served only in some canteens."""
+
+    floor = models.PositiveSmallIntegerField('этаж', unique=True)
+    name = models.CharField('название', max_length=100)
+
+    class Meta:
+        verbose_name = 'столовая'
+        verbose_name_plural = 'столовые'
+        ordering = ['floor']
+
+    def __str__(self):
+        return self.name
+
+
 class Dish(models.Model):
     category = models.ForeignKey(
         Category,
@@ -69,6 +84,14 @@ class Dish(models.Model):
         default=0,
     )
 
+
+    canteens = models.ManyToManyField(
+        Canteen,
+        related_name='dishes',
+        verbose_name='где есть',
+        blank=True,
+        help_text='В каких столовых подают блюдо: заказать его можно только с получением там.',
+    )
 
     is_available = models.BooleanField(
         'в наличии',

@@ -2,7 +2,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from accounts.permissions import get_role
-from menu.models import Dish
+from menu.models import Canteen, Dish
 
 from .models import PICKUP_TIMES, Message, Order, OrderItem
 
@@ -21,12 +21,13 @@ class OrderSerializer(serializers.ModelSerializer):
 
     items = OrderItemSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    canteen_name = serializers.CharField(source='canteen.name', read_only=True)
 
     class Meta:
         model = Order
         fields = [
-            'id', 'student_name', 'pickup_time', 'comment', 'status', 'status_display',
-            'total', 'created_at', 'items',
+            'id', 'student_name', 'canteen', 'canteen_name', 'pickup_time', 'comment', 'status',
+            'status_display', 'total', 'created_at', 'items',
         ]
 
 
@@ -47,6 +48,7 @@ class OrderItemInputSerializer(serializers.Serializer):
 
 class OrderCreateSerializer(serializers.Serializer):
     student_name = serializers.CharField(max_length=80)
+    canteen = serializers.PrimaryKeyRelatedField(queryset=Canteen.objects.all(), help_text='id столовой из /api/canteens/.')
     pickup_time = serializers.ChoiceField(choices=PICKUP_TIMES)
     comment = serializers.CharField(max_length=500, required=False, allow_blank=True)
     items = OrderItemInputSerializer(many=True, allow_empty=False)
@@ -68,12 +70,16 @@ class OrderCreateSerializer(serializers.Serializer):
         with transaction.atomic():
             dishes = Dish.objects.select_for_update().filter(id__in=quantities, is_available=True)
             dishes = {dish.id: dish for dish in dishes}
+            canteen = validated_data['canteen']
+            served_here = set(canteen.dishes.filter(id__in=quantities).values_list('id', flat=True))
 
             errors = []
             for dish_id, quantity in quantities.items():
                 dish = dishes.get(dish_id)
                 if dish is None:
                     errors.append(f'Блюдо №{dish_id} недоступно.')
+                elif dish_id not in served_here:
+                    errors.append(f'«{dish.name}» нет в столовой на {canteen.floor} этаже.')
                 elif dish.portions_today < quantity:
                     errors.append(f'«{dish.name}»: осталось только {dish.portions_today} порц.')
             if errors:
@@ -84,6 +90,7 @@ class OrderCreateSerializer(serializers.Serializer):
             order = Order.objects.create(
                 user=self.context['request'].user,
                 student_name=validated_data['student_name'],
+                canteen=validated_data['canteen'],
                 pickup_time=validated_data['pickup_time'],
                 comment=validated_data.get('comment', '').strip(),
                 total=total,
