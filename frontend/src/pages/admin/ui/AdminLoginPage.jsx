@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      navigate('/admin/dashboard', { replace: true });
+      navigate('/staff/dashboard', { replace: true });
     } catch (err) {
       setError(getErrorMessage(err, 'Не удалось войти. Проверьте данные.'));
     } finally {

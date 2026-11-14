@@ -17,13 +17,15 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from .views import frontend
 
 urlpatterns = [
     path('', frontend, name='frontend'),
+    # The staff panel of the React site (/staff/login, /staff/orders, ...): React picks the page itself.
+    re_path(r'^staff(?:/.*)?$', frontend, name='staff-panel'),
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='docs'),
