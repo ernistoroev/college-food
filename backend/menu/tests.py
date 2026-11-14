@@ -128,7 +128,7 @@ class MenuApiTests(APITestCase):
         response = self.client.get('/api/canteens/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual([(c['floor'], c['name']) for c in response.json()],
-                         [(1, 'Столовая, 1 этаж'), (5, 'Столовая, 5 этаж'), (6, 'Столовая, 6 этаж')])
+                         [(1, '1 этаж'), (5, '5 этаж'), (6, '6 этаж')])
 
     def test_dish_shows_and_filters_by_canteens(self):
         first, fifth, sixth = Canteen.objects.order_by('floor')
@@ -137,7 +137,7 @@ class MenuApiTests(APITestCase):
 
         dish = self.client.get(f'/api/dishes/{self.plov.id}/').json()
         self.assertEqual(dish['canteens'], [fifth.id, sixth.id])
-        self.assertEqual(dish['canteen_names'], ['Столовая, 5 этаж', 'Столовая, 6 этаж'])
+        self.assertEqual(dish['canteen_names'], ['5 этаж', '6 этаж'])
         self.assertEqual(self.names(canteen=sixth.id), ['Плов'])
         self.assertEqual(self.names(canteen=first.id), ['Чай'])
 
@@ -225,11 +225,28 @@ class MenuPermissionsTests(APITestCase):
         # Without canteens a new dish is served in all of them.
         self.assertEqual(len(response.json()['canteens']), 3)
 
+    def test_dish_from_staff_panel_is_in_the_menu_at_once(self):
+        # The same form data the React staff panel sends (multipart, canteens as repeated keys).
+        first = Canteen.objects.get(floor=1)
+        self.client.force_authenticate(self.staff)
+        response = self.client.post('/api/dishes/', {
+            'name': 'Спагетти', 'description': '', 'price': '210', 'category': self.hot.id,
+            'weight': '300', 'weight_unit': 'г', 'portions_today': '15', 'is_available': 'true',
+            'canteens': [first.id],
+        })
+        self.assertEqual(response.status_code, 201)
+
+        self.client.force_authenticate(None)
+        menu = {d['name']: d for d in self.client.get('/api/dishes/').json()['results']}
+        self.assertEqual(menu['Спагетти']['portions_today'], 15)
+        self.assertTrue(menu['Спагетти']['is_available'])
+        self.assertEqual(menu['Спагетти']['canteen_names'], ['1 этаж'])
+
     def test_staff_sets_dish_canteens(self):
         self.client.force_authenticate(self.staff)
         first = Canteen.objects.get(floor=1)
         response = self.client.post('/api/dishes/', {**self.new_dish, 'canteens': [first.id]})
-        self.assertEqual(response.json()['canteen_names'], ['Столовая, 1 этаж'])
+        self.assertEqual(response.json()['canteen_names'], ['1 этаж'])
 
         response = self.client.patch(f'/api/dishes/{self.plov.id}/', {'canteens': []}, format='json')
         self.assertEqual(response.status_code, 400)

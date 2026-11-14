@@ -85,7 +85,7 @@ class StudentOrdersTests(OrdersTestCase):
 
     def test_order_remembers_canteen(self):
         data = self.order([{'dish': self.plov.id, 'quantity': 1}], canteen=self.sixth.id).json()
-        self.assertEqual((data['canteen'], data['canteen_name']), (self.sixth.id, 'Столовая, 6 этаж'))
+        self.assertEqual((data['canteen'], data['canteen_name']), (self.sixth.id, '6 этаж'))
 
     def test_canteen_is_required_and_checked(self):
         for canteen in [None, 999, '']:
@@ -98,7 +98,7 @@ class StudentOrdersTests(OrdersTestCase):
         items = [{'dish': self.plov.id, 'quantity': 1}, {'dish': self.spaghetti.id, 'quantity': 1}]
         response = self.order(items)
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()['items'], ['«Спагетти» нет в столовой на 5 этаже.'])
+        self.assertEqual(response.json()['items'], ['«Спагетти» не доставляют на 5 этаж.'])
         self.plov.refresh_from_db()
         self.assertEqual(self.plov.portions_today, 5)
 

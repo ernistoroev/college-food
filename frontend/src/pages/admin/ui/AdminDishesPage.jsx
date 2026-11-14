@@ -8,14 +8,17 @@ const emptyForm = {
   category: '',
   weight: '0',
   weight_unit: 'г',
-  portions_today: '0',
+  // Empty on purpose: with 0 portions a new dish would show in the menu as «закончилось».
+  portions_today: '',
   is_available: true,
   image: null,
+  canteens: [],
 };
 
 export default function AdminDishesPage() {
   const [dishes, setDishes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [canteens, setCanteens] = useState([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -37,13 +40,15 @@ export default function AdminDishesPage() {
       if (search.trim()) params.search = search.trim();
       if (category !== 'all') params.category = category;
 
-      const [dishData, categoryData] = await Promise.all([
+      const [dishData, categoryData, canteenData] = await Promise.all([
         getList('/dishes/', params),
         getList('/categories/'),
+        api.get('/canteens/').then(response => response.data),
       ]);
 
       setDishes(dishData);
       setCategories(categoryData);
+      setCanteens(canteenData);
     } catch (requestError) {
       setError(getErrorMessage(requestError, 'Не удалось загрузить меню.'));
     } finally {
@@ -61,6 +66,8 @@ export default function AdminDishesPage() {
     setForm({
       ...emptyForm,
       category: categories[0] ? String(categories[0].id) : '',
+      // A new dish is ticked for all floors; untick the ones it is not delivered to.
+      canteens: canteens.map(item => item.id),
     });
     setFormError('');
     setModalOpen(true);
@@ -78,6 +85,7 @@ export default function AdminDishesPage() {
       portions_today: String(dish.portions_today ?? 0),
       is_available: Boolean(dish.is_available),
       image: null,
+      canteens: dish.canteens || [],
     });
     setFormError('');
     setModalOpen(true);
@@ -96,12 +104,26 @@ export default function AdminDishesPage() {
     }));
   }
 
+  function toggleCanteen(id) {
+    setForm(current => ({
+      ...current,
+      canteens: current.canteens.includes(id)
+        ? current.canteens.filter(item => item !== id)
+        : [...current.canteens, id],
+    }));
+  }
+
   async function saveDish(event) {
     event.preventDefault();
     setFormError('');
 
-    if (!form.name.trim() || !form.category || form.price === '') {
-      setFormError('Заполните название, категорию и цену.');
+    if (!form.name.trim() || !form.category || form.price === '' || form.portions_today === '') {
+      setFormError('Заполните название, категорию, цену и количество порций.');
+      return;
+    }
+
+    if (form.canteens.length === 0) {
+      setFormError('Выберите хотя бы один этаж, на который доставляют блюдо.');
       return;
     }
 
@@ -122,8 +144,9 @@ export default function AdminDishesPage() {
     data.append('category', form.category);
     data.append('weight', form.weight || '0');
     data.append('weight_unit', form.weight_unit);
-    data.append('portions_today', form.portions_today || '0');
+    data.append('portions_today', form.portions_today);
     data.append('is_available', String(form.is_available));
+    form.canteens.forEach(id => data.append('canteens', id));
 
     if (form.image) data.append('image', form.image);
 
@@ -187,6 +210,14 @@ export default function AdminDishesPage() {
 
   function formatPrice(value) {
     return `${Number(value || 0).toLocaleString('ru-RU')} сом`;
+  }
+
+  // «1, 5 этаж» — the floors the dish is delivered to.
+  function floorsText(dish) {
+    const floors = canteens
+      .filter(item => dish.canteens?.includes(item.id))
+      .map(item => item.floor);
+    return floors.length ? `${floors.join(', ')} этаж` : '—';
   }
 
   return (
@@ -264,6 +295,11 @@ export default function AdminDishesPage() {
                 <div className="admin-dish-stock">
                   <span>Порций сегодня</span>
                   <strong>{dish.portions_today}</strong>
+                </div>
+
+                <div className="admin-dish-stock">
+                  <span>Доставка</span>
+                  <strong>{floorsText(dish)}</strong>
                 </div>
 
                 <div className="admin-dish-status">
@@ -350,8 +386,8 @@ export default function AdminDishesPage() {
                 </label>
 
                 <label>
-                  Количество порций
-                  <input name="portions_today" type="number" min="0" step="1" value={form.portions_today} onChange={updateField} />
+                  Порций на сегодня *
+                  <input name="portions_today" type="number" min="0" step="1" value={form.portions_today} onChange={updateField} required />
                 </label>
               </div>
 
@@ -368,6 +404,20 @@ export default function AdminDishesPage() {
                     <option value="мл">Миллилитры (мл)</option>
                   </select>
                 </label>
+              </div>
+
+              <div className="admin-dish-canteens">
+                <span>На какие этажи доставляют *</span>
+                {canteens.map(item => (
+                  <label className="admin-dish-checkbox" key={item.id}>
+                    <input
+                      type="checkbox"
+                      checked={form.canteens.includes(item.id)}
+                      onChange={() => toggleCanteen(item.id)}
+                    />
+                    {item.name}
+                  </label>
+                ))}
               </div>
 
               <label>

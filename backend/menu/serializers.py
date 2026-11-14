@@ -27,7 +27,7 @@ class DishSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     canteens = serializers.PrimaryKeyRelatedField(
         queryset=Canteen.objects.all(), many=True, required=False,
-        help_text='id столовых, где есть блюдо. Не указано при создании — во всех столовых.',
+        help_text='id этажей, на которые доставляют блюдо. Не указано при создании — на все этажи.',
     )
     canteen_names = serializers.SlugRelatedField(source='canteens', slug_field='name', many=True, read_only=True)
     rating = serializers.SerializerMethodField(help_text='Средняя оценка по видимым отзывам, null — отзывов нет.')
@@ -57,7 +57,7 @@ class DishSerializer(serializers.ModelSerializer):
         # In form data DRF reads a list that was not sent as empty; only a list really sent counts.
         if 'canteens' in data and not data['canteens']:
             if 'canteens' in self.initial_data:
-                raise serializers.ValidationError({'canteens': 'Выберите хотя бы одну столовую.'})
+                raise serializers.ValidationError({'canteens': 'Выберите хотя бы один этаж доставки.'})
             del data['canteens']
         return data
 

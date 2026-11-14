@@ -34,9 +34,9 @@ class Order(models.Model):
         verbose_name='пользователь',
     )
     student_name = models.CharField('имя студента', max_length=80)
-    # Where the student collects the order; every dish in it must be served there.
-    canteen = models.ForeignKey(Canteen, on_delete=models.PROTECT, related_name='orders', verbose_name='столовая')
-    pickup_time = models.CharField('время получения', max_length=5, choices=PICKUP_TIMES)
+    # The floor the order is delivered to; every dish in it must be delivered there.
+    canteen = models.ForeignKey(Canteen, on_delete=models.PROTECT, related_name='orders', verbose_name='этаж доставки')
+    pickup_time = models.CharField('время доставки', max_length=5, choices=PICKUP_TIMES)
     comment = models.TextField('комментарий', max_length=500, blank=True)
     status = models.CharField('статус', max_length=20, choices=Status.choices, default=Status.NEW)
     total = models.DecimalField('сумма, сом', max_digits=10, decimal_places=2)
