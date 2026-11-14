@@ -1,0 +1,18 @@
+# systemd: runs Django (gunicorn) and starts it again after a crash or a server reboot.
+# Copy to /etc/systemd/system/college-food.service (see DEPLOY_ORACLE.md).
+# Paths are for the user "ubuntu" and the project in /home/ubuntu/college-food.
+
+[Unit]
+Description=College Food (Django + gunicorn)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/college-food/backend
+# Settings come from backend/.env, which settings.py reads itself.
+ExecStart=/home/ubuntu/college-food/backend/venv/bin/gunicorn config.wsgi:application --bind 127.0.0.1:8000 --workers 2 --timeout 60
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

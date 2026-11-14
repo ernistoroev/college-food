@@ -166,6 +166,12 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+# On our own server (DEPLOY_ORACLE.md) nginx takes https and passes the request to gunicorn over http.
+# nginx tells Django the real scheme in X-Forwarded-Proto, so photo URLs are https too.
+# Turn it on only behind such a proxy: otherwise anyone could send this header.
+if os.environ.get('DJANGO_BEHIND_PROXY', 'False').lower() in ('true', '1', 'yes'):
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
