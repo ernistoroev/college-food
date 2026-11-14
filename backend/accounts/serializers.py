@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.db.models import Q
 from rest_framework import serializers
 
 from .models import Profile
@@ -60,7 +61,8 @@ class RegisterSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         email = value.strip().lower()
-        if User.objects.filter(username=email).exists():
+        # The e-mail may be the login of another user or only their Email field (e.g. a superuser).
+        if User.objects.filter(Q(username__iexact=email) | Q(email__iexact=email)).exists():
             raise serializers.ValidationError('Пользователь с такой почтой уже есть.')
         return email
 
@@ -86,11 +88,20 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        user = authenticate(username=data['email'].strip().lower(), password=data['password'])
-        if user is None:
-            raise serializers.ValidationError('Неверная почта или пароль.')
-        data['user'] = user
-        return data
+        email = data['email'].strip()
+        # Students registered on the site have the e-mail as the username. Users made with
+        # `createsuperuser` or in the admin often have another username ("admin") and the e-mail
+        # only in the Email field — they log in with it too. Letter case does not matter.
+        candidates = [
+            *User.objects.filter(username__iexact=email),
+            *User.objects.filter(email__iexact=email).exclude(username__iexact=email),
+        ]
+        for candidate in candidates:
+            user = authenticate(username=candidate.username, password=data['password'])
+            if user is not None:
+                data['user'] = user
+                return data
+        raise serializers.ValidationError('Неверная почта или пароль.')
 
 
 class ProfileUpdateSerializer(serializers.Serializer):

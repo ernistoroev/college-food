@@ -52,6 +52,27 @@ class AuthApiTests(APITestCase):
         self.register()
         self.assertEqual(self.login(password='wrong').status_code, 400)
 
+    def test_superuser_with_other_username_logs_in_by_email(self):
+        # createsuperuser: the username is "morgart", the e-mail is only in the Email field.
+        User.objects.create_superuser(username='morgart', email='Morgart@Gmail.com', password=PASSWORD)
+        for url in ['/api/auth/login/', '/api/staff/auth/login/']:
+            with self.subTest(url=url):
+                response = self.client.post(url, {'email': 'morgart@gmail.com', 'password': PASSWORD})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()['user']['role'], 'staff')
+        response = self.client.post('/api/staff/auth/login/', {'email': 'morgart@gmail.com', 'password': 'wrong'})
+        self.assertEqual(response.status_code, 400)
+
+    def test_login_ignores_letter_case(self):
+        User.objects.create_user(username='Cook@College.kg', password=PASSWORD)
+        self.assertEqual(self.login(email='cook@college.kg').status_code, 200)
+
+    def test_cannot_register_with_email_of_another_user(self):
+        User.objects.create_superuser(username='morgart', email='morgart@gmail.com', password=PASSWORD)
+        response = self.register(email='Morgart@gmail.com')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('email', response.json())
+
     def test_refresh_gives_new_access_token(self):
         refresh = self.register().json()['refresh']
         response = self.client.post('/api/auth/refresh/', {'refresh': refresh})

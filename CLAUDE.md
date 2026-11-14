@@ -88,7 +88,9 @@ SQLite (`backend/db.sqlite3`).
 
 Полный список — в Swagger (`/api/docs/`). Коротко:
 - авторизация: JWT, заголовок `Authorization: Bearer <access>`; `access` живёт 30 минут, `refresh` — 7 дней
-  (`SIMPLE_JWT`). `register`/`login` → `{access, refresh, user}`, `refresh` → `{access}`. Выхода на сервере нет —
+  (`SIMPLE_JWT`). `register`/`login` → `{access, refresh, user}`, `refresh` → `{access}`. Вход по почте ищет
+  пользователя и по `username`, и по полю `email`, без учёта регистра (суперпользователь `admin` с почтой в Email
+  тоже войдёт); регистрация на почту, которая уже есть у кого-то в `username` или `email`, — 400. Выхода на сервере нет —
   фронтенд просто удаляет токены;
 - меню: `ModelViewSet` для `/api/dishes/` и `/api/categories/`; фильтры `?category=`, `?search=`, `?available=`;
   `PATCH /api/dishes/{id}/availability/`; `GET /api/dishes/{id}/reviews/`; в блюде `rating` и `reviews_count`
