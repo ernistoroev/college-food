@@ -13,7 +13,7 @@ export default function CheckoutForm({
   const [chosenCanteen, setChosenCanteen] = useState(null);
   const [pickupTime, setPickupTime] = useState('12:20');
 
-  // Only the canteens that serve every dish in the cart.
+  // Only the floors every dish in the cart is delivered to.
   const available = canteens.filter(item => cart.every(dish => dish.canteens?.includes(item.id)));
   const canteen = available.some(item => item.id === chosenCanteen) ? chosenCanteen : available[0]?.id;
 
@@ -39,7 +39,7 @@ export default function CheckoutForm({
   return (
     <form className="checkout-form" onSubmit={handleSubmit}>
       <h2>Оформление заказа</h2>
-      <p>Укажи имя, столовую и удобное время получения.</p>
+      <p>Укажи имя, этаж и удобное время доставки.</p>
 
       <label>
         Имя студента
@@ -54,7 +54,7 @@ export default function CheckoutForm({
       </label>
 
       <label>
-        Где забрать
+        На какой этаж доставить
         {available.length > 0 ? (
           <select
             value={canteen}
@@ -66,13 +66,13 @@ export default function CheckoutForm({
           </select>
         ) : (
           <span className="checkout-form-warning">
-            Нет столовой, где есть все блюда из корзины. Оформи их отдельными заказами.
+            Нет этажа, на который доставляют все блюда из корзины. Оформи их отдельными заказами.
           </span>
         )}
       </label>
 
       <label>
-        Время получения
+        Время доставки
         <select
           value={pickupTime}
           onChange={event => setPickupTime(event.target.value)}

@@ -116,7 +116,7 @@ export default function MenuPage({
                     {dish.floors && (
                       <>
                         <span className="meta-dot">·</span>
-                        <span>{dish.floors} этаж</span>
+                        <span>доставка: {dish.floors} этаж</span>
                       </>
                     )}
                     {dish.rating && (

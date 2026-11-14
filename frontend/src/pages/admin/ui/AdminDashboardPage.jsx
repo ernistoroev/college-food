@@ -34,8 +34,8 @@ const statistics = [
   },
   {
     key: 'orders_ready',
-    title: 'Готовы к выдаче',
-    description: 'Ожидают получения',
+    title: 'Готовы к доставке',
+    description: 'Ожидают доставки',
     icon: '✓',
   },
 ];

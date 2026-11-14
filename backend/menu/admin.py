@@ -51,6 +51,6 @@ class DishAdmin(admin.ModelAdmin):
         # A new dish is ticked for all canteens; staff untick the ones that do not serve it.
         return {**super().get_changeform_initial_data(request), 'canteens': Canteen.objects.all()}
 
-    @admin.display(description='где есть')
+    @admin.display(description='этажи доставки')
     def served_in(self, dish):
         return ', '.join(f'{canteen.floor} эт.' for canteen in dish.canteens.all()) or '—'

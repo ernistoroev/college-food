@@ -28,7 +28,7 @@ TAG = 'Заказы'
             OpenApiParameter('status', OpenApiTypes.STR, enum=Order.Status.values,
                              description='Только заказы в этом статусе.'),
             OpenApiParameter('canteen', OpenApiTypes.INT,
-                             description='Только заказы в эту столовую (id из /api/canteens/).'),
+                             description='Только заказы с доставкой на этот этаж (id из /api/canteens/).'),
         ],
     ),
     retrieve=extend_schema(
@@ -38,8 +38,8 @@ TAG = 'Заказы'
     ),
     create=extend_schema(
         tags=[TAG], summary='Оформить заказ', request=OrderCreateSerializer, responses={201: OrderSerializer},
-        description='Только студент. Сумму считает сервер по ценам из базы. Если порций не хватает или блюда нет '
-                    'в выбранной столовой (`canteen`) — 400 и ничего не списывается.',
+        description='Только студент. Сумму считает сервер по ценам из базы. Если порций не хватает или блюдо '
+                    'не доставляют на выбранный этаж (`canteen`) — 400 и ничего не списывается.',
     ),
     change_status=extend_schema(
         tags=[TAG], summary='Сменить статус', request=OrderStatusSerializer, responses=StaffOrderDetailSerializer,

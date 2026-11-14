@@ -23,14 +23,17 @@ class Category(models.Model):
 
 
 class Canteen(models.Model):
-    """A college canteen. The menu is one, but each dish is served only in some canteens."""
+    """
+    A delivery floor (1, 5, 6): the student picks where the order is delivered.
+    The menu is one, but each dish is delivered only to some floors.
+    """
 
     floor = models.PositiveSmallIntegerField('этаж', unique=True)
     name = models.CharField('название', max_length=100)
 
     class Meta:
-        verbose_name = 'столовая'
-        verbose_name_plural = 'столовые'
+        verbose_name = 'этаж доставки'
+        verbose_name_plural = 'этажи доставки'
         ordering = ['floor']
 
     def __str__(self):
@@ -88,9 +91,9 @@ class Dish(models.Model):
     canteens = models.ManyToManyField(
         Canteen,
         related_name='dishes',
-        verbose_name='где есть',
+        verbose_name='этажи доставки',
         blank=True,
-        help_text='В каких столовых подают блюдо: заказать его можно только с получением там.',
+        help_text='На какие этажи доставляют блюдо: заказать его можно только с доставкой туда.',
     )
 
     is_available = models.BooleanField(

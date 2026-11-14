@@ -17,12 +17,12 @@ STAFF_ONLY = ' Только сотрудник столовой.'
 
 
 @extend_schema_view(
-    list=extend_schema(tags=[TAG], summary='Столовые',
-                       description='Столовые колледжа по этажам. Меняются только в Django-админке.'),
-    retrieve=extend_schema(tags=[TAG], summary='Одна столовая'),
+    list=extend_schema(tags=[TAG], summary='Этажи доставки',
+                       description='Этажи, на которые доставляют заказы (1, 5, 6). Меняются только в Django-админке.'),
+    retrieve=extend_schema(tags=[TAG], summary='Один этаж доставки'),
 )
 class CanteenViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/canteens/ — the college canteens; everyone can read, staff change them in the admin."""
+    """GET /api/canteens/ — the delivery floors; everyone can read, staff change them in the admin."""
 
     queryset = Canteen.objects.all()
     serializer_class = CanteenSerializer
@@ -58,7 +58,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 DISH_FILTERS = [
     OpenApiParameter('category', OpenApiTypes.INT, description='Только блюда этой категории (id).'),
-    OpenApiParameter('canteen', OpenApiTypes.INT, description='Только блюда, которые есть в этой столовой (id).'),
+    OpenApiParameter('canteen', OpenApiTypes.INT, description='Только блюда, которые доставляют на этот этаж (id).'),
     OpenApiParameter('search', OpenApiTypes.STR, description='Часть названия, регистр не важен.'),
     OpenApiParameter('available', OpenApiTypes.BOOL,
                      description='`false` — только недоступные (для сотрудника), `true` — только доступные.'),

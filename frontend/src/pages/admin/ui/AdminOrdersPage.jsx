@@ -142,7 +142,7 @@ export default function AdminOrdersPage() {
                   <span className="admin-order-number">ЗАКАЗ №{order.id}</span>
                   <h3>{order.student_name || 'Студент'}</h3>
                   <p>
-                    {formatDate(order.created_at)} · Получение: {order.canteen_name || '—'}, {order.pickup_time || '—'}
+                    {formatDate(order.created_at)} · Доставка: {order.canteen_name || '—'}, {order.pickup_time || '—'}
                   </p>
                 </div>
 
@@ -235,11 +235,11 @@ export default function AdminOrdersPage() {
               <strong>{selectedOrder.customer_email || '—'}</strong>
             </div>
             <div className="admin-order-detail">
-              <span>Столовая</span>
+              <span>Этаж доставки</span>
               <strong>{selectedOrder.canteen_name || '—'}</strong>
             </div>
             <div className="admin-order-detail">
-              <span>Время получения</span>
+              <span>Время доставки</span>
               <strong>{selectedOrder.pickup_time || '—'}</strong>
             </div>
             <div className="admin-order-detail">

@@ -48,7 +48,7 @@ class OrderItemInputSerializer(serializers.Serializer):
 
 class OrderCreateSerializer(serializers.Serializer):
     student_name = serializers.CharField(max_length=80)
-    canteen = serializers.PrimaryKeyRelatedField(queryset=Canteen.objects.all(), help_text='id столовой из /api/canteens/.')
+    canteen = serializers.PrimaryKeyRelatedField(queryset=Canteen.objects.all(), help_text='id этажа доставки из /api/canteens/.')
     pickup_time = serializers.ChoiceField(choices=PICKUP_TIMES)
     comment = serializers.CharField(max_length=500, required=False, allow_blank=True)
     items = OrderItemInputSerializer(many=True, allow_empty=False)
@@ -79,7 +79,7 @@ class OrderCreateSerializer(serializers.Serializer):
                 if dish is None:
                     errors.append(f'Блюдо №{dish_id} недоступно.')
                 elif dish_id not in served_here:
-                    errors.append(f'«{dish.name}» нет в столовой на {canteen.floor} этаже.')
+                    errors.append(f'«{dish.name}» не доставляют на {canteen.floor} этаж.')
                 elif dish.portions_today < quantity:
                     errors.append(f'«{dish.name}»: осталось только {dish.portions_today} порц.')
             if errors:

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ShoppingCart,
   Utensils,
@@ -34,6 +34,9 @@ import AuthModal from './features/auth/ui/AuthModal.jsx';
 import ProfilePage from './pages/profile/ui/ProfilePage.jsx';
 import { fetchCurrentUser, logout, updateProfile } from './entities/auth/model/auth.js';
 
+// How often the open menu asks the server for changes made by the staff.
+const MENU_REFRESH_MS = 15000;
+
 export default function App() {
   const [category, setCategory] = useState(ALL_CATEGORIES);
   const [menuDishes, setMenuDishes] = useState([]);
@@ -65,18 +68,47 @@ export default function App() {
       dish.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // The cart for the menu refresh below, which runs outside of renders.
+  const cartRef = useRef(cart);
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
+
   // Menu and categories come from the backend; portions left (stock) are counted there too.
-  function loadMenu() {
+  // Portions already in the cart stay taken on the screen, the same as when they were added.
+  function applyMenu(menu, currentCart) {
+    setMenuDishes(menu.dishes.map(dish => {
+      const inCart = currentCart.find(item => item.id === dish.id)?.quantity ?? 0;
+      return inCart ? { ...dish, stock: Math.max(dish.stock - inCart, 0) } : dish;
+    }));
+    setCategories(menu.categories);
+    setCanteens(menu.canteens);
+    setMenuError('');
+  }
+
+  function loadMenu(currentCart = cartRef.current) {
     return fetchMenu()
-      .then(menu => {
-        setMenuDishes(menu.dishes);
-        setCategories(menu.categories);
-        setCanteens(menu.canteens);
-        setMenuError('');
-      })
+      .then(menu => applyMenu(menu, currentCart))
       .catch(error => setMenuError(getErrorMessage(error)))
       .finally(() => setMenuLoading(false));
   }
+
+  // Dishes the staff add or change in the panel show up without reloading the page:
+  // the menu is fetched again every MENU_REFRESH_MS and when the student comes back to the tab.
+  // A failed refresh keeps the menu that is already on the screen.
+  useEffect(() => {
+    function refreshMenu() {
+      if (document.visibilityState !== 'visible') return;
+      fetchMenu().then(menu => applyMenu(menu, cartRef.current)).catch(() => {});
+    }
+
+    const timer = setInterval(refreshMenu, MENU_REFRESH_MS);
+    document.addEventListener('visibilitychange', refreshMenu);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', refreshMenu);
+    };
+  }, []);
 
   // Called on login and logout: «Мои заказы» belong to the logged-in student.
   function changeUser(user) {
@@ -214,7 +246,7 @@ export default function App() {
       setCheckoutOpen(false);
       setOrdersOpen(true);
       setReviewsOpen(false);
-      loadMenu();
+      loadMenu([]);
     } catch (error) {
       window.alert(getErrorMessage(error, 'Не удалось оформить заказ.'));
     } finally {
@@ -500,7 +532,7 @@ export default function App() {
                       }}
                     >
                       <Package size={15} />
-                      Получение: {order.canteen}, {order.pickupTime}
+                      Доставка: {order.canteen}, {order.pickupTime}
                     </div>
 
                     <div
