@@ -6,7 +6,7 @@ from django.core.files import File
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from menu.models import Category, Dish
+from menu.models import Canteen, Category, Dish
 from menu.management.commands.import_dishes import DISHES
 
 
@@ -54,6 +54,8 @@ class Command(BaseCommand):
             )
 
             if created:
+                # A new dish is served in all canteens; staff narrow it down in the admin.
+                dish.canteens.set(Canteen.objects.all())
                 created_count += 1
             else:
                 existing_count += 1

@@ -149,7 +149,8 @@ python manage.py test              # все тесты (пароли в тест
 ## Frontend
 
 Стек: React 19, Vite 8, ESLint, lucide-react (иконки), axios (запросы к API), qrcode.react (QR демо-оплаты).
-react-router-dom установлен, но не используется. Зависимости — в `frontend/package.json` / `package-lock.json`.
+react-router-dom — маршруты в `src/main.jsx`: `/` — сайт для студентов (`App.jsx`), `/staff/...` — панель
+сотрудника (`pages/admin/ui/`: вход, обзор, заказы, блюда; не `/admin` — там Django-админка). Зависимости — в `frontend/package.json` / `package-lock.json`.
 
 Адрес API — `VITE_API_URL`, по умолчанию `http://127.0.0.1:8000/api` (`src/shared/api/client.js`).
 JWT: `access` и `refresh` хранятся в `localStorage` (`college-food-access`, `college-food-refresh`); axios
@@ -162,8 +163,9 @@ JWT: `access` и `refresh` хранятся в `localStorage` (`college-food-acc
 На карточке блюда — этажи, где оно есть; в форме заказа «Где забрать» — только столовые, где есть все блюда
 корзины (`/api/canteens/` грузится вместе с меню). Иконка сайта — логотип колледжа (`public/favicon.png`,
 `favicon.ico`, `apple-touch-icon.png`).
-Страница «Отзывы» показывает отзывы о столовой (`?dish=none`). Интерфейса сотрудника во фронтенде пока нет —
-сотрудник работает в Django-админке; `user.role` для будущей панели уже приходит.
+Страница «Отзывы» показывает отзывы о столовой (`?dish=none`). Панель сотрудника (`/staff/login`) пускает только
+`user.role === 'staff'`; в заказах статус можно выбрать только из разрешённых переходов (как `NEXT_STATUSES`).
+Чата, модерации отзывов и категорий в панели пока нет — это делается в Django-админке.
 Корзина живёт только в памяти; при добавлении `stock` уменьшается на экране, настоящий остаток считает сервер,
 после заказа меню перезагружается. Оформить заказ, открыть «Мои заказы» и оставить отзыв можно только после входа.
 Поиск и фильтр по категории — на клиенте.
@@ -188,7 +190,7 @@ API, админку, Swagger и собранный React-сайт. `npm run buil
 `.env.deploy` → `VITE_API_URL=/api`) собирает сайт в `backend/frontend_build/` — эта папка **коммитится**,
 потому что на хостинге фронтенд не собирается. После изменений во фронтенде её нужно пересобрать.
 `whitenoise` отдаёт `staticfiles/` (после `collectstatic`, в `.gitignore`) и файлы сборки с корня сайта
-(`WHITENOISE_ROOT`), `config/views.py:frontend` отдаёт `index.html` на `/`. Медиа на хостинге раздаёт
+(`WHITENOISE_ROOT`), `config/views.py:frontend` отдаёт `index.html` на `/` и на `/staff/...` (панель сотрудника). Медиа на хостинге раздаёт
 PythonAnywhere (Static files: `/media/`). Продакшен-настройки — через `.env`: `DJANGO_DEBUG=False`,
 `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`.
 

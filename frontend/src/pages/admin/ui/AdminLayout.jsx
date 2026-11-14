@@ -16,7 +16,7 @@ export default function AdminLayout() {
         if (!active) return;
 
         if (!currentUser) {
-          navigate('/admin/login', { replace: true });
+          navigate('/staff/login', { replace: true });
           return;
         }
 
@@ -38,7 +38,7 @@ export default function AdminLayout() {
 
   async function handleLogout() {
     await logout();
-    navigate('/admin/login', { replace: true });
+    navigate('/staff/login', { replace: true });
   }
 
   if (loading || !user) {
@@ -59,9 +59,9 @@ export default function AdminLayout() {
         <div className="admin-nav-label">МЕНЮ</div>
 
         <nav className="admin-nav">
-          <NavLink to="/admin/dashboard">⌂ <span>Обзор</span></NavLink>
-          <NavLink to="/admin/orders">▤ <span>Заказы</span></NavLink>
-          <NavLink to="/admin/dishes">♨ <span>Блюда</span></NavLink>
+          <NavLink to="/staff/dashboard">⌂ <span>Обзор</span></NavLink>
+          <NavLink to="/staff/orders">▤ <span>Заказы</span></NavLink>
+          <NavLink to="/staff/dishes">♨ <span>Блюда</span></NavLink>
         </nav>
 
         <div className="admin-sidebar-bottom">

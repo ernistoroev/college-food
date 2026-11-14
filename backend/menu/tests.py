@@ -1,11 +1,12 @@
 from decimal import Decimal
-from io import BytesIO
+from io import BytesIO, StringIO
 from tempfile import TemporaryDirectory
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.db.models import ProtectedError
 from django.test import TestCase
 from PIL import Image
@@ -66,6 +67,14 @@ def make_staff(username='cook@college.kg'):
     user = User.objects.create_user(username=username, password='x')
     user.groups.add(Group.objects.get(name=STAFF_GROUP))
     return user
+
+
+class RestoreOriginalMenuTests(TestCase):
+    def test_new_dishes_are_served_in_all_canteens(self):
+        with TemporaryDirectory() as media_root, self.settings(MEDIA_ROOT=media_root):
+            call_command('restore_original_menu', stdout=StringIO())
+        self.assertEqual(Dish.objects.count(), 28)
+        self.assertFalse(Dish.objects.filter(canteens__isnull=True).exists())
 
 
 class MenuApiTests(APITestCase):

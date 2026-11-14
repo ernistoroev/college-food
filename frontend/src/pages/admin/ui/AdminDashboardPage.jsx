@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
                       </strong>
                       <span>Оценка: {review.rating ?? '—'}</span>
                     </div>
-                    <p>{review.comment || 'Без текста'}</p>
+                    <p>{review.text || 'Без текста'}</p>
                   </article>
                 ))}
               </div>

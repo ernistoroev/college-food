@@ -10,15 +10,7 @@ import AdminDashboardPage from './pages/admin/ui/AdminDashboardPage.jsx'
 import AdminOrdersPage from './pages/admin/ui/AdminOrdersPage.jsx'
 import AdminDishesPage from './pages/admin/ui/AdminDishesPage.jsx'
 
-function AdminPlaceholder({ title, description }) {
-  return (
-    <div>
-      <h1 style={{ margin: '0 0 10px', fontSize: 28 }}>{title}</h1>
-      <p style={{ color: '#7b8493' }}>{description}</p>
-    </div>
-  )
-}
-
+// The staff panel lives under /staff: on the hosting /admin/ is the Django admin.
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
@@ -26,11 +18,11 @@ createRoot(document.getElementById('root')).render(
         <Route path="/" element={<App />} />
 
         <Route
-          path="/admin/login"
+          path="/staff/login"
           element={<AdminLoginPage />}
         />
 
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route path="/staff" element={<AdminLayout />}>
           <Route
             index
             element={<Navigate to="dashboard" replace />}

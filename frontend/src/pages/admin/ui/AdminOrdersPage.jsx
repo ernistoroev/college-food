@@ -11,6 +11,13 @@ const statuses = [
 
 const finalStatuses = ['done', 'cancelled'];
 
+// The same rule as on the server (Order.NEXT_STATUSES): one step forward or cancel.
+const nextStatuses = {
+  new: ['cooking', 'cancelled'],
+  cooking: ['ready', 'cancelled'],
+  ready: ['done', 'cancelled'],
+};
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState('all');
@@ -135,7 +142,7 @@ export default function AdminOrdersPage() {
                   <span className="admin-order-number">ЗАКАЗ №{order.id}</span>
                   <h3>{order.student_name || 'Студент'}</h3>
                   <p>
-                    {formatDate(order.created_at)} · Получение: {order.pickup_time || '—'}
+                    {formatDate(order.created_at)} · Получение: {order.canteen_name || '—'}, {order.pickup_time || '—'}
                   </p>
                 </div>
 
@@ -186,11 +193,13 @@ export default function AdminOrdersPage() {
                       onChange={event => changeStatus(order, event.target.value)}
                       aria-label={`Статус заказа ${order.id}`}
                     >
-                      {statuses.map(item => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
+                      {statuses
+                        .filter(item => item.value === order.status || nextStatuses[order.status]?.includes(item.value))
+                        .map(item => (
+                          <option key={item.value} value={item.value}>
+                            {item.label}
+                          </option>
+                        ))}
                     </select>
                   )}
                 </div>
@@ -224,6 +233,10 @@ export default function AdminOrdersPage() {
             <div className="admin-order-detail">
               <span>Email</span>
               <strong>{selectedOrder.customer_email || '—'}</strong>
+            </div>
+            <div className="admin-order-detail">
+              <span>Столовая</span>
+              <strong>{selectedOrder.canteen_name || '—'}</strong>
             </div>
             <div className="admin-order-detail">
               <span>Время получения</span>
