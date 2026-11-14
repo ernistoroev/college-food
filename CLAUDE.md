@@ -128,6 +128,7 @@ SQLite (`backend/db.sqlite3`).
 | `DJANGO_ALLOWED_HOSTS` | пусто | список хостов через запятую, нужен при `DEBUG=False` |
 | `DJANGO_CORS_ALLOWED_ORIGINS` | пусто | адреса фронтенда через запятую, которым можно обращаться к API |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | пусто | на хостинге — `https://адрес`, чтобы работал вход в админку |
+| `DJANGO_BEHIND_PROXY` | `False` | только на своём сервере за nginx: `True` включает `SECURE_PROXY_SSL_HEADER` |
 
 `settings.py` сам читает `backend/.env` (без сторонних библиотек); реальные переменные окружения имеют приоритет.
 Файл `.env` в `.gitignore`, `.env.example` — коммитится.
@@ -197,6 +198,12 @@ API, админку, Swagger и собранный React-сайт. `npm run buil
 (`WHITENOISE_ROOT`), `config/views.py:frontend` отдаёт `index.html` на `/` и на `/staff/...` (панель сотрудника). Медиа на хостинге раздаёт
 PythonAnywhere (Static files: `/media/`). Продакшен-настройки — через `.env`: `DJANGO_DEBUG=False`,
 `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`.
+
+Второй вариант — свой сервер (Oracle Cloud Free Tier, Ubuntu): `DEPLOY_ORACLE.md`. nginx → gunicorn
+(`127.0.0.1:8000`, systemd-сервис `college-food`) → Django; nginx сам отдаёт только `/media/`. Готовые файлы —
+`deploy/college-food.service` и `deploy/nginx-college-food.conf` (пользователь `ubuntu`, папка
+`/home/ubuntu/college-food`). В `.env` там ещё `DJANGO_BEHIND_PROXY=True`. Обновление — `git pull`, `migrate`,
+`collectstatic`, `sudo systemctl restart college-food`.
 
 ## Соглашения
 
